@@ -22,6 +22,7 @@ import numpy as np
 import pandas as pd
 
 from .. import __version__, config
+from ..env import load_dotenv
 from ..series import Series, file_sha256, save_series, series_summary, write_manifest
 from .sources import FETCHERS
 
@@ -96,6 +97,7 @@ def run(
     out_dir: Path | None = None,
 ) -> Path:
     """Fetch, validate, and write one snapshot. Returns the manifest path."""
+    load_dotenv()
     start = start or config.FRESH_BENCHMARK_START
     end = end or config.fresh_benchmark_end()
     out_dir = out_dir or config.FRESH_DIR

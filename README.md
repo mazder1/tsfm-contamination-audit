@@ -153,8 +153,20 @@ Wikipedia pageviews is **deliberately adversarial**: TimesFM is documented as tr
 this exact source. The domain is in-distribution for an audited model while the
 observations are not — precisely the recall-vs-transfer separation we want to expose.
 
-First snapshot: 12 series, 84,750 observations, 2025-01-01 to 2026-07-19. ENTSO-E is
-pending a token and is skipped without failing the run.
+### ENTSO-E access
+
+Unlike the other two, ENTSO-E is not open on request — API access is granted manually:
+
+1. Register at <https://transparency.entsoe.eu/>.
+2. Email `transparency@entsoe.eu` from the registered address, subject
+   **"Restful API access"**, stating the account email and asking for API access.
+3. Once granted, generate a **Web Api Security Token** under *Account Settings*.
+4. `cp .env.example .env` and paste the token into `ENTSOE_API_TOKEN`.
+
+`.env` is gitignored and never overrides a real environment variable, so CI and Docker can
+supply the token their own way. A missing token skips the source without failing the fetch.
+
+First snapshot: 12 series, 84,750 observations, 2025-01-01 to 2026-07-19.
 
 ---
 
