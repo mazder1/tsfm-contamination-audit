@@ -1,0 +1,237 @@
+{
+  "schema_version": 1,
+  "tsfm_audit_version": "0.1.0",
+  "fetched_at_utc": "2026-07-26T10:20:02.837020+00:00",
+  "window": {
+    "start": "2025-01-01",
+    "end": "2026-07-19"
+  },
+  "admissibility_cutoff": "2025-01-01",
+  "cutoff_rationale": "Latest audited model released 2024-05-01; buffered to 2025-01-01 because release date is not data cutoff.",
+  "observations_dropped_before_cutoff": 0,
+  "sources": {
+    "open_meteo": {
+      "ok": true,
+      "n_series": 6
+    },
+    "wikipedia": {
+      "ok": true,
+      "n_series": 6
+    },
+    "entsoe": {
+      "ok": false,
+      "error": "ENTSOE_API_TOKEN is not set. Request a free token at https://transparency.entsoe.eu/ (Account Settings) and export it.",
+      "n_series": 0
+    }
+  },
+  "n_series": 12,
+  "n_observations": 84750,
+  "data_file": "fresh_20260726.parquet",
+  "data_sha256": "3cc51710ff21737416c0902acc57d4584bbc365f7e24c1206ea6444fcd98d56e",
+  "series": [
+    {
+      "series_id": "open_meteo:temperature_2m:reykjavik",
+      "source": "open_meteo",
+      "domain": "weather",
+      "freq": "h",
+      "n_obs": 13560,
+      "n_missing": 0,
+      "start": "2025-01-01 00:00:00+00:00",
+      "end": "2026-07-19 23:00:00+00:00",
+      "content_hash": "305e144ab9c408c0",
+      "metadata": {
+        "latitude": 64.1466,
+        "longitude": -21.9426,
+        "variable": "temperature_2m",
+        "units": "\u00b0C",
+        "api": "https://archive-api.open-meteo.com/v1/archive"
+      }
+    },
+    {
+      "series_id": "open_meteo:temperature_2m:warsaw",
+      "source": "open_meteo",
+      "domain": "weather",
+      "freq": "h",
+      "n_obs": 13560,
+      "n_missing": 0,
+      "start": "2025-01-01 00:00:00+00:00",
+      "end": "2026-07-19 23:00:00+00:00",
+      "content_hash": "2d6f71b69ab4a68d",
+      "metadata": {
+        "latitude": 52.2297,
+        "longitude": 21.0122,
+        "variable": "temperature_2m",
+        "units": "\u00b0C",
+        "api": "https://archive-api.open-meteo.com/v1/archive"
+      }
+    },
+    {
+      "series_id": "open_meteo:temperature_2m:phoenix",
+      "source": "open_meteo",
+      "domain": "weather",
+      "freq": "h",
+      "n_obs": 13560,
+      "n_missing": 0,
+      "start": "2025-01-01 00:00:00+00:00",
+      "end": "2026-07-19 23:00:00+00:00",
+      "content_hash": "038a52f959d3add5",
+      "metadata": {
+        "latitude": 33.4484,
+        "longitude": -112.074,
+        "variable": "temperature_2m",
+        "units": "\u00b0C",
+        "api": "https://archive-api.open-meteo.com/v1/archive"
+      }
+    },
+    {
+      "series_id": "open_meteo:temperature_2m:singapore",
+      "source": "open_meteo",
+      "domain": "weather",
+      "freq": "h",
+      "n_obs": 13560,
+      "n_missing": 0,
+      "start": "2025-01-01 00:00:00+00:00",
+      "end": "2026-07-19 23:00:00+00:00",
+      "content_hash": "9db0db1038ac9f41",
+      "metadata": {
+        "latitude": 1.3521,
+        "longitude": 103.8198,
+        "variable": "temperature_2m",
+        "units": "\u00b0C",
+        "api": "https://archive-api.open-meteo.com/v1/archive"
+      }
+    },
+    {
+      "series_id": "open_meteo:temperature_2m:nairobi",
+      "source": "open_meteo",
+      "domain": "weather",
+      "freq": "h",
+      "n_obs": 13560,
+      "n_missing": 0,
+      "start": "2025-01-01 00:00:00+00:00",
+      "end": "2026-07-19 23:00:00+00:00",
+      "content_hash": "7ea9c16152ca0e22",
+      "metadata": {
+        "latitude": -1.2921,
+        "longitude": 36.8219,
+        "variable": "temperature_2m",
+        "units": "\u00b0C",
+        "api": "https://archive-api.open-meteo.com/v1/archive"
+      }
+    },
+    {
+      "series_id": "open_meteo:temperature_2m:sydney",
+      "source": "open_meteo",
+      "domain": "weather",
+      "freq": "h",
+      "n_obs": 13560,
+      "n_missing": 0,
+      "start": "2025-01-01 00:00:00+00:00",
+      "end": "2026-07-19 23:00:00+00:00",
+      "content_hash": "23ac4bc865a87594",
+      "metadata": {
+        "latitude": -33.8688,
+        "longitude": 151.2093,
+        "variable": "temperature_2m",
+        "units": "\u00b0C",
+        "api": "https://archive-api.open-meteo.com/v1/archive"
+      }
+    },
+    {
+      "series_id": "wikipedia:pageviews:Python_(programming_language)",
+      "source": "wikipedia",
+      "domain": "web_traffic",
+      "freq": "D",
+      "n_obs": 565,
+      "n_missing": 0,
+      "start": "2025-01-01 00:00:00+00:00",
+      "end": "2026-07-19 00:00:00+00:00",
+      "content_hash": "4ce07021f52fc620",
+      "metadata": {
+        "project": "en.wikipedia",
+        "article": "Python_(programming_language)",
+        "agent": "user"
+      }
+    },
+    {
+      "series_id": "wikipedia:pageviews:Association_football",
+      "source": "wikipedia",
+      "domain": "web_traffic",
+      "freq": "D",
+      "n_obs": 565,
+      "n_missing": 0,
+      "start": "2025-01-01 00:00:00+00:00",
+      "end": "2026-07-19 00:00:00+00:00",
+      "content_hash": "d6b7fc0160b1bc9f",
+      "metadata": {
+        "project": "en.wikipedia",
+        "article": "Association_football",
+        "agent": "user"
+      }
+    },
+    {
+      "series_id": "wikipedia:pageviews:Climate_change",
+      "source": "wikipedia",
+      "domain": "web_traffic",
+      "freq": "D",
+      "n_obs": 565,
+      "n_missing": 0,
+      "start": "2025-01-01 00:00:00+00:00",
+      "end": "2026-07-19 00:00:00+00:00",
+      "content_hash": "d8f1e3e0f7aa9004",
+      "metadata": {
+        "project": "en.wikipedia",
+        "article": "Climate_change",
+        "agent": "user"
+      }
+    },
+    {
+      "series_id": "wikipedia:pageviews:Stock_market",
+      "source": "wikipedia",
+      "domain": "web_traffic",
+      "freq": "D",
+      "n_obs": 565,
+      "n_missing": 0,
+      "start": "2025-01-01 00:00:00+00:00",
+      "end": "2026-07-19 00:00:00+00:00",
+      "content_hash": "6e0e0f76cc066441",
+      "metadata": {
+        "project": "en.wikipedia",
+        "article": "Stock_market",
+        "agent": "user"
+      }
+    },
+    {
+      "series_id": "wikipedia:pageviews:Influenza",
+      "source": "wikipedia",
+      "domain": "web_traffic",
+      "freq": "D",
+      "n_obs": 565,
+      "n_missing": 0,
+      "start": "2025-01-01 00:00:00+00:00",
+      "end": "2026-07-19 00:00:00+00:00",
+      "content_hash": "d91d7879a45c61d3",
+      "metadata": {
+        "project": "en.wikipedia",
+        "article": "Influenza",
+        "agent": "user"
+      }
+    },
+    {
+      "series_id": "wikipedia:pageviews:Christmas",
+      "source": "wikipedia",
+      "domain": "web_traffic",
+      "freq": "D",
+      "n_obs": 565,
+      "n_missing": 0,
+      "start": "2025-01-01 00:00:00+00:00",
+      "end": "2026-07-19 00:00:00+00:00",
+      "content_hash": "262cc03222a70774",
+      "metadata": {
+        "project": "en.wikipedia",
+        "article": "Christmas",
+        "agent": "user"
+      }
+    }
+  ]
+}

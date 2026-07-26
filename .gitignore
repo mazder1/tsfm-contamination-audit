@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+
+# Fetched caches and raw dumps (regenerable)
+data/cache/
+data/raw/
+
+# Model checkpoints (pinned by revision, never committed)
+models/
+hf_cache/
+
+# Forecast cache (regenerable from seeds + pinned revisions)
+artifacts/forecasts/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Secrets
+.env

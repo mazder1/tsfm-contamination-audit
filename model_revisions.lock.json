@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "resolved_at_utc": "2026-07-26T10:20:33.625433+00:00",
+  "models": {
+    "chronos-base": {
+      "repo_id": "amazon/chronos-t5-base",
+      "revision": "ad294eaacead15db499b740ea4122266dd2a81a2",
+      "last_modified": "2025-11-21T12:56:17.000Z"
+    },
+    "timesfm-200m": {
+      "repo_id": "google/timesfm-1.0-200m",
+      "revision": "8775f7531211ac864b739fe776b0b255c277e2be",
+      "last_modified": "2024-05-17T17:29:47.000Z"
+    },
+    "moirai-base": {
+      "repo_id": "Salesforce/moirai-1.0-R-base",
+      "revision": "4fa939a8800d9da346c0280f3d9aeba0d2d35877",
+      "last_modified": "2025-01-21T09:10:49.000Z"
+    },
+    "lag-llama": {
+      "repo_id": "time-series-foundation-models/Lag-Llama",
+      "revision": "72dcfc29da106acfe38250a60f4ae29d1e56a3d9",
+      "last_modified": "2024-05-14T12:41:49.000Z"
+    }
+  }
+}
