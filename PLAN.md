@@ -23,13 +23,20 @@ Ordering rule: **cheap and decisive first, expensive and ambiguous last.**
   that counts as contamination. Commit it. The git timestamp is the proof the threshold
   wasn't tuned to the answer.
 - Repo skeleton, pinned environment, pinned model revisions, pinned seeds.
-- **Start the fresh-benchmark fetcher on day one.** Non-obvious but important: the fresh
-  benchmark needs data published *after* every audited model's release, so it has to
-  accrue. Start it in month three and it's a three-week benchmark. Start it now and it
-  collects quietly while everything else gets built. This is the only thing that is
-  genuinely expensive to defer.
+- **Stand up the fresh-benchmark fetcher.** Sources are chosen for deep archives, so the
+  window backfills in a single run rather than accruing in real time — an earlier draft of
+  this plan claimed collection had to start immediately or the benchmark would be short,
+  which is wrong for archive-backed sources and was the reason for choosing them. The
+  *scheduled* refresh lands in Phase 8 with the leaderboard it feeds; deferring it costs
+  nothing, because any gap can be backfilled later.
 
-**Gate:** pre-registration committed before any model is run.
+**Gate:** pre-registration committed before any model is run; one snapshot captured with a
+provenance manifest.
+
+**Status: complete.** Committed `efb1540` (public, CI green). First snapshot: 12 series,
+84,750 observations, 2025-01-01 to 2026-07-19, from Open-Meteo and Wikimedia pageviews.
+ENTSO-E pending manual API approval; it skips cleanly and backfills whenever the token
+arrives.
 
 ---
 
