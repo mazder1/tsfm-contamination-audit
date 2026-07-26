@@ -78,7 +78,8 @@ the per-series structure the probe is looking for.
 | No gap | Clean. |
 
 A single-family design cannot separate these two, which is why the brief calls surrogate
-design the decision the project rests on. Surrogates are never stored — only their derived
+design the decision the project rests on. Neither family is trusted until it passes the
+surrogate null validation below. Surrogates are never stored — only their derived
 seeds (`config.derive_seed`), which makes them regenerable and the storage cost zero.
 
 ### Statistical test
@@ -116,6 +117,21 @@ but a meaningful threshold requires calibration. Freezing the *rule* rather than
 and a test asserts that.
 
 ### Validity conditions (the run is void if these fail)
+
+- **Surrogate null validation.** The surrogate argument assumes a legitimate forecaster
+  relies only on the properties the surrogate preserves. That is an assumption about how a
+  black box works, so it is tested rather than asserted. The measured gap must be
+  statistically indistinguishable from zero, at the same FDR level, for:
+  1. forecasters with no training corpus at all (seasonal naive, ETS, ARIMA), where
+     memorization is impossible by construction;
+  2. **each audited model run on the fresh benchmark**, where contamination is impossible
+     by date — same weights, same probe, true gap known to be zero;
+  3. pure noise.
+
+  A model that fires under (2) relies on structure the surrogate destroys and **cannot be
+  audited** until the surrogate is redesigned. Domain matching applies: fresh electricity
+  load is the null control for the Electricity/ETT benchmarks, which is why the ENTSO-E
+  source is load-bearing rather than optional.
 
 - **Negative control** fires on **< 5 %** of series. A probe that fires where contamination
   is impossible is broken, and every positive result it produced is worthless.

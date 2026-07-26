@@ -105,6 +105,55 @@ the probe is measuring the wrong thing.
 
 ---
 
+## Phase 3.5 — Null validation: does the surrogate preserve forecastability? ⭐
+
+**Goal:** prove the probe stays silent where contamination is impossible, *before* trusting
+it anywhere it might fire.
+
+### Why this exists
+
+The surrogate argument assumes a legitimate forecaster relies only on the properties the
+surrogate preserves. That is an assumption about how the model works — and these are black
+boxes. If a model legitimately exploits structure IAAFT happens to destroy, a gap appears
+with no memorization behind it, and nothing downstream distinguishes that from a real
+finding. The probe would be manufacturing its own results.
+
+Phase 3 checks that surrogates *match on their claimed properties*. That is a different and
+weaker question than whether those properties are **sufficient for forecasting**. This
+phase asks the second one.
+
+### Three tests, escalating
+
+**1. Forecasters with no training corpus.** Seasonal naive, ETS, ARIMA — fit per-series,
+so memorization is impossible by construction. Run the full probe on them.
+
+A gap here means the surrogate destroyed structure a legitimate forecaster uses. Seasonal
+naive is the sharpest diagnostic: simple enough that any gap points at a specific defect
+(seasonality not preserved, IAAFT not converged).
+
+**2. The audited models on the fresh benchmark.** The strong test, because it uses the
+actual black box.
+
+Same weights, same probe, but on post-2025 data that cannot be in any audited training set.
+The true gap is known to be zero. If a gap appears anyway, that model relies on something
+the surrogate destroys, and it **cannot be audited** until the surrogate is redesigned.
+
+*Confound:* the fresh benchmark is different data, so a difference could be domain rather
+than contamination. Mitigate by matching domains — fresh electricity load is the null
+control for the Electricity/ETT benchmarks. This is why the ENTSO-E source is load-bearing
+rather than optional.
+
+**3. Pure noise.** No structure to memorize, so nothing may fire.
+
+**Gate — hard stop:** the measured gap must be statistically indistinguishable from zero in
+all three, at the same FDR level used for the real sweep. Any firing means the surrogate is
+broken; fix it and re-run before Phase 4.
+
+**Credit:** this phase was added after review pointed out that the original design assumed
+what the models use rather than testing it.
+
+---
+
 ## Phase 4 — Calibration ⭐ (the keystone)
 
 **Goal:** measure the probe's sensitivity against a model whose memory we control exactly.
