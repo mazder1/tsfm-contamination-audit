@@ -160,6 +160,42 @@ PROTOCOL = Protocol()
 
 
 # --------------------------------------------------------------------------
+# Gap handling (pre-registered; see README § Gaps and segmentation)
+# --------------------------------------------------------------------------
+
+# Forecast horizon used throughout the audit.
+EVAL_HORIZON = 24
+
+# Largest context window across AUDITED_MODELS. Measured from the model configs
+# in Phase 1; None until then.
+#
+# The *rule* is what is pre-registered, not the number — the same construction
+# used for Protocol.detection_floor. Fixing the rule now and measuring the value
+# later is what stops the threshold from being chosen to suit a result. Taking
+# the maximum across models (rather than each model's own context) keeps every
+# model scored on an identical set of segments, so the null control cannot
+# quietly change shape between models.
+MAX_AUDITED_CONTEXT: int | None = None
+
+
+def min_usable_segment_length(max_context: int | None = None) -> int:
+    """Shortest segment that can still be scored: one context plus one horizon.
+
+    A segment shorter than this cannot produce even a single forecast, so it is
+    dropped. This is the whole of the segmentation policy — there is deliberately
+    no tunable gap-length threshold, because any such threshold would have been
+    picked knowing which series it excluded.
+    """
+    ctx = MAX_AUDITED_CONTEXT if max_context is None else max_context
+    if ctx is None:
+        raise ValueError(
+            "MAX_AUDITED_CONTEXT is unset — it is measured from the model configs in "
+            "Phase 1. Pass max_context explicitly for a provisional figure."
+        )
+    return ctx + EVAL_HORIZON
+
+
+# --------------------------------------------------------------------------
 # Fresh benchmark sources
 # --------------------------------------------------------------------------
 

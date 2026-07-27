@@ -141,6 +141,37 @@ and a test asserts that.
 - Pure-noise input produces no firing.
 - A series duplicated inside a benchmark **does** fire.
 
+### Gaps and segmentation
+
+Real data has holes, and how they are patched can manufacture a finding. Filling a hole
+invents easy-to-forecast data inside a series we are calling clean; gluing across one
+invents a discontinuity. Either way the real series gains a feature its surrogates do not
+have, the scores diverge, and the divergence looks exactly like memorization.
+
+So nothing is filled and nothing is glued:
+
+> Split every series at **every** gap — one hour or a hundred, no distinction. Then drop
+> any segment shorter than one context window plus one forecast horizon, since it cannot
+> produce a forecast at all.
+
+The deliberate omission is a gap-length threshold. "Split only at gaps longer than *N*"
+would be simpler, but *N* would be chosen with full knowledge of which windows it excluded.
+The rule above has no such parameter — the only number in it comes from the models.
+
+Minimum length is `max(context) + horizon` across audited models, not each model's own,
+so every model is scored on an identical set of segments and the null control cannot change
+shape between them. `config.MAX_AUDITED_CONTEXT` is `None` until Phase 1 reads it from the
+model configs, and a test asserts that — the rule is pre-registered here, the number is a
+measurement, exactly as with `δ` above.
+
+On the current snapshot this affects one series: `entsoe:load:ES` splits into `#s1`
+(2,819 h) and `#s2` (10,250 h), with a 449-hour tail after the July gap dropped as too
+short. Segment numbering runs over all segments found, so a dropped one leaves a visible
+hole rather than vanishing.
+
+Implemented in [`series.split_at_gaps`](src/tsfm_audit/series.py) and covered by
+[`tests/test_segments.py`](tests/test_segments.py).
+
 ### Fresh benchmark cutoff
 
 Admissibility cutoff: **2025-01-01**.
@@ -193,8 +224,8 @@ backfilled in one run.
 
 **Known gap.** `entsoe:load:ES` is missing 42 hours in two runs — 35 hours from
 2025-04-28 11:00 UTC, coinciding with the Iberian Peninsula blackout, and 7 hours from
-2026-07-01 00:00 UTC. PL and DE_LU are complete. How the blackout window is handled is an
-open decision recorded below, to be fixed before any model is scored.
+2026-07-01 00:00 UTC. PL and DE_LU are complete. Handled by the segmentation rule below,
+fixed before any model was scored.
 
 ---
 
@@ -240,11 +271,6 @@ Deliberately unresolved, with the phase that resolves each:
   Traffic, Weather, M4 subset), confirmed in **Phase 1** against published numbers.
 - Block length for the bootstrap surrogate — **Phase 3**, chosen by a stated criterion, not
   by which value gives the nicer answer.
-- Handling of the 2025-04-28 Iberian blackout window in `entsoe:load:ES` — **Phase 3.5**,
-  and fixed *before* any model is scored. A structural break inside the electricity null
-  control can produce a real-vs-surrogate difference with no memorization behind it.
-  Deciding this after seeing scores would be indistinguishable from fitting the data to the
-  answer, which is the failure mode the pre-registration is for.
 - Near-duplicate window length, normalization, and match threshold — **Phase 6**.
 - Which corpora can actually be searched — **Phase 6**, with the unsearchable ones named.
 - Each model's true data cutoff — **Phase 7**, documenting what was established versus

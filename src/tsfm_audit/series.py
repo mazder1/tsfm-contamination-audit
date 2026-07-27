@@ -59,6 +59,77 @@ class Series:
         )
 
 
+def split_at_gaps(series: Series, min_length: int) -> list[Series]:
+    """Split a series into maximal gap-free segments, dropping unusable ones.
+
+    A gap is either a missing value or a break in the timestamp grid. Every gap
+    splits, regardless of length; segments shorter than ``min_length`` are then
+    discarded because they cannot produce a forecast.
+
+    The alternative — a "split only on gaps longer than N" rule — was rejected
+    deliberately. N would be a free parameter chosen while already knowing which
+    windows it excluded, which is the exact failure the pre-registration exists
+    to prevent. Here the only number is dictated by the models.
+
+    Segments are id'd ``<parent>#s1``, ``#s2``, … numbered over *all* segments
+    found, so the ids do not silently renumber when a short one is dropped.
+    """
+    n = len(series)
+    if n == 0:
+        return []
+
+    stamps = series.timestamps
+    present = ~np.isnan(series.values)
+
+    # Modal step defines the grid; anything wider than it is a break.
+    step = None
+    if n > 1:
+        diffs = pd.Series(stamps).diff().dropna()
+        if not diffs.empty:
+            modes = diffs.mode()
+            step = modes.iloc[0] if not modes.empty else None
+
+    bounds: list[tuple[int, int]] = []
+    start: int | None = None
+    for i in range(n):
+        broken = not present[i]
+        if not broken and start is not None and step is not None:
+            broken = (stamps[i] - stamps[i - 1]) != step
+            if broken:
+                bounds.append((start, i - 1))
+                start = i
+                continue
+        if not broken and start is None:
+            start = i
+        elif broken and start is not None:
+            bounds.append((start, i - 1))
+            start = None
+    if start is not None:
+        bounds.append((start, n - 1))
+
+    out: list[Series] = []
+    for number, (a, b) in enumerate(bounds, start=1):
+        if (b - a + 1) < min_length:
+            continue
+        out.append(
+            Series(
+                series_id=f"{series.series_id}#s{number}",
+                source=series.source,
+                domain=series.domain,
+                freq=series.freq,
+                timestamps=pd.DatetimeIndex(stamps[a : b + 1]),
+                values=series.values[a : b + 1],
+                metadata={
+                    **series.metadata,
+                    "parent_series_id": series.series_id,
+                    "segment_number": number,
+                    "segments_found": len(bounds),
+                },
+            )
+        )
+    return out
+
+
 def save_series(series: list[Series], path: Path) -> Path:
     """Write a set of series to one parquet file."""
     path.parent.mkdir(parents=True, exist_ok=True)

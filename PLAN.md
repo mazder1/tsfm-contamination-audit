@@ -149,7 +149,7 @@ than contamination. Mitigate by matching domains — fresh electricity load is t
 control for the Electricity/ETT benchmarks. This is why the ENTSO-E source is load-bearing
 rather than optional.
 
-#### Open decision: the Iberian blackout in `entsoe:load:ES` ⚠
+#### Decided: the Iberian blackout in `entsoe:load:ES` ✓
 
 The ES load series has 42 missing hours in exactly two runs:
 
@@ -166,14 +166,38 @@ surrogate as scattered noise rather than as one contiguous event. Real and surro
 differ in a way that has nothing to do with memorization, which is precisely the false
 positive Phase 3.5 exists to rule out.
 
-The options are to keep the window, to excise it and treat ES as two segments, or to drop
-ES and rely on PL and DE_LU (both complete) for the electricity null control.
+**Decision: excise, and treat the series as segments.** No value is ever invented, and no
+seam is ever glued. Taken before any model was run — the commit history is the evidence.
 
-**The decision must be made and committed before Phase 4 runs**, and the reason is not
-technical. Excluding an inconvenient window *before* any model has been scored is a data
-choice; making the same exclusion afterwards is indistinguishable from tuning the data to
-the answer, and the pre-registration exists to make that distinction verifiable. This is
-the first live instance of the discipline Phase 0 was set up to enforce.
+The rule, stated so that it contains no free parameter:
+
+> Split every series at **every** gap, whether the gap is one hour or a hundred. Then drop
+> any segment shorter than one context window plus one forecast horizon, because such a
+> segment cannot produce a forecast at all.
+
+The rejected alternative was "split only at gaps longer than *N* hours." It reaches the
+same place for ES with less bookkeeping, but *N* would have been a number chosen while
+already knowing which windows it excluded — a dial set to produce a preferred answer. The
+rule above has no dial: the only threshold is dictated by the models' own context lengths.
+
+Applied to the current snapshot, this touches exactly one series:
+
+| Segment | Span | Hours | Kept |
+|---|---|---|---|
+| `entsoe:load:ES#s1` | 2025-01-01 → 2025-04-28 | 2,819 | yes |
+| `entsoe:load:ES#s2` | 2025-04-29 → 2026-06-30 | 10,250 | yes |
+| `entsoe:load:ES#s3` | 2026-07-01 → 2026-07-19 | 449 | no — too short |
+
+The 7-hour gap still splits the series; the tail it leaves behind simply cannot be scored
+and falls out on its own. No one had to decide that.
+
+Segment ids are numbered over *all* segments found, not just the survivors, so a dropped
+segment leaves a visible hole in the numbering rather than disappearing silently.
+
+Implemented in `series.split_at_gaps`, with the minimum length from
+`config.min_usable_segment_length`. `config.MAX_AUDITED_CONTEXT` is `None` until Phase 1
+reads it from the model configs — the same construction as `detection_floor`: the rule is
+pre-registered, the number is measured. A test asserts it stays `None`.
 
 **3. Pure noise.** No structure to memorize, so nothing may fire.
 
