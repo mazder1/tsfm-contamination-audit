@@ -1,0 +1,287 @@
+{
+  "schema_version": 1,
+  "tsfm_audit_version": "0.1.0",
+  "fetched_at_utc": "2026-07-27T10:53:21.793166+00:00",
+  "window": {
+    "start": "2025-01-01",
+    "end": "2026-07-20"
+  },
+  "admissibility_cutoff": "2025-01-01",
+  "cutoff_rationale": "Latest audited model released 2024-05-01; buffered to 2025-01-01 because release date is not data cutoff.",
+  "observations_dropped_before_cutoff": 0,
+  "sources": {
+    "open_meteo": {
+      "ok": true,
+      "n_series": 6
+    },
+    "wikipedia": {
+      "ok": true,
+      "n_series": 6
+    },
+    "entsoe": {
+      "ok": true,
+      "n_series": 3
+    }
+  },
+  "n_series": 15,
+  "n_observations": 125580,
+  "data_file": "fresh_20260727.parquet",
+  "data_sha256": "f9df8e72a4f44a525dd0783e77e856e7b16f5468063f2375b09e45c1c8101e64",
+  "series": [
+    {
+      "series_id": "open_meteo:temperature_2m:reykjavik",
+      "source": "open_meteo",
+      "domain": "weather",
+      "freq": "h",
+      "n_obs": 13584,
+      "n_missing": 0,
+      "start": "2025-01-01 00:00:00+00:00",
+      "end": "2026-07-20 23:00:00+00:00",
+      "content_hash": "d68fbf478b568da6",
+      "metadata": {
+        "latitude": 64.1466,
+        "longitude": -21.9426,
+        "variable": "temperature_2m",
+        "units": "\u00b0C",
+        "api": "https://archive-api.open-meteo.com/v1/archive"
+      }
+    },
+    {
+      "series_id": "open_meteo:temperature_2m:warsaw",
+      "source": "open_meteo",
+      "domain": "weather",
+      "freq": "h",
+      "n_obs": 13584,
+      "n_missing": 0,
+      "start": "2025-01-01 00:00:00+00:00",
+      "end": "2026-07-20 23:00:00+00:00",
+      "content_hash": "1c8918a349bd3272",
+      "metadata": {
+        "latitude": 52.2297,
+        "longitude": 21.0122,
+        "variable": "temperature_2m",
+        "units": "\u00b0C",
+        "api": "https://archive-api.open-meteo.com/v1/archive"
+      }
+    },
+    {
+      "series_id": "open_meteo:temperature_2m:phoenix",
+      "source": "open_meteo",
+      "domain": "weather",
+      "freq": "h",
+      "n_obs": 13584,
+      "n_missing": 0,
+      "start": "2025-01-01 00:00:00+00:00",
+      "end": "2026-07-20 23:00:00+00:00",
+      "content_hash": "3d7ce300f8c5821e",
+      "metadata": {
+        "latitude": 33.4484,
+        "longitude": -112.074,
+        "variable": "temperature_2m",
+        "units": "\u00b0C",
+        "api": "https://archive-api.open-meteo.com/v1/archive"
+      }
+    },
+    {
+      "series_id": "open_meteo:temperature_2m:singapore",
+      "source": "open_meteo",
+      "domain": "weather",
+      "freq": "h",
+      "n_obs": 13584,
+      "n_missing": 0,
+      "start": "2025-01-01 00:00:00+00:00",
+      "end": "2026-07-20 23:00:00+00:00",
+      "content_hash": "274a342406095808",
+      "metadata": {
+        "latitude": 1.3521,
+        "longitude": 103.8198,
+        "variable": "temperature_2m",
+        "units": "\u00b0C",
+        "api": "https://archive-api.open-meteo.com/v1/archive"
+      }
+    },
+    {
+      "series_id": "open_meteo:temperature_2m:nairobi",
+      "source": "open_meteo",
+      "domain": "weather",
+      "freq": "h",
+      "n_obs": 13584,
+      "n_missing": 0,
+      "start": "2025-01-01 00:00:00+00:00",
+      "end": "2026-07-20 23:00:00+00:00",
+      "content_hash": "566b33e9910e5e4a",
+      "metadata": {
+        "latitude": -1.2921,
+        "longitude": 36.8219,
+        "variable": "temperature_2m",
+        "units": "\u00b0C",
+        "api": "https://archive-api.open-meteo.com/v1/archive"
+      }
+    },
+    {
+      "series_id": "open_meteo:temperature_2m:sydney",
+      "source": "open_meteo",
+      "domain": "weather",
+      "freq": "h",
+      "n_obs": 13584,
+      "n_missing": 0,
+      "start": "2025-01-01 00:00:00+00:00",
+      "end": "2026-07-20 23:00:00+00:00",
+      "content_hash": "1af09f776f48353c",
+      "metadata": {
+        "latitude": -33.8688,
+        "longitude": 151.2093,
+        "variable": "temperature_2m",
+        "units": "\u00b0C",
+        "api": "https://archive-api.open-meteo.com/v1/archive"
+      }
+    },
+    {
+      "series_id": "wikipedia:pageviews:Python_(programming_language)",
+      "source": "wikipedia",
+      "domain": "web_traffic",
+      "freq": "D",
+      "n_obs": 566,
+      "n_missing": 0,
+      "start": "2025-01-01 00:00:00+00:00",
+      "end": "2026-07-20 00:00:00+00:00",
+      "content_hash": "02cb230de2a2ace3",
+      "metadata": {
+        "project": "en.wikipedia",
+        "article": "Python_(programming_language)",
+        "agent": "user"
+      }
+    },
+    {
+      "series_id": "wikipedia:pageviews:Association_football",
+      "source": "wikipedia",
+      "domain": "web_traffic",
+      "freq": "D",
+      "n_obs": 566,
+      "n_missing": 0,
+      "start": "2025-01-01 00:00:00+00:00",
+      "end": "2026-07-20 00:00:00+00:00",
+      "content_hash": "6cf98cfc41b770d2",
+      "metadata": {
+        "project": "en.wikipedia",
+        "article": "Association_football",
+        "agent": "user"
+      }
+    },
+    {
+      "series_id": "wikipedia:pageviews:Climate_change",
+      "source": "wikipedia",
+      "domain": "web_traffic",
+      "freq": "D",
+      "n_obs": 566,
+      "n_missing": 0,
+      "start": "2025-01-01 00:00:00+00:00",
+      "end": "2026-07-20 00:00:00+00:00",
+      "content_hash": "b38cdc64ca96ebc4",
+      "metadata": {
+        "project": "en.wikipedia",
+        "article": "Climate_change",
+        "agent": "user"
+      }
+    },
+    {
+      "series_id": "wikipedia:pageviews:Stock_market",
+      "source": "wikipedia",
+      "domain": "web_traffic",
+      "freq": "D",
+      "n_obs": 566,
+      "n_missing": 0,
+      "start": "2025-01-01 00:00:00+00:00",
+      "end": "2026-07-20 00:00:00+00:00",
+      "content_hash": "9830a24a0076f2d9",
+      "metadata": {
+        "project": "en.wikipedia",
+        "article": "Stock_market",
+        "agent": "user"
+      }
+    },
+    {
+      "series_id": "wikipedia:pageviews:Influenza",
+      "source": "wikipedia",
+      "domain": "web_traffic",
+      "freq": "D",
+      "n_obs": 566,
+      "n_missing": 0,
+      "start": "2025-01-01 00:00:00+00:00",
+      "end": "2026-07-20 00:00:00+00:00",
+      "content_hash": "9d7cd91a03215553",
+      "metadata": {
+        "project": "en.wikipedia",
+        "article": "Influenza",
+        "agent": "user"
+      }
+    },
+    {
+      "series_id": "wikipedia:pageviews:Christmas",
+      "source": "wikipedia",
+      "domain": "web_traffic",
+      "freq": "D",
+      "n_obs": 566,
+      "n_missing": 0,
+      "start": "2025-01-01 00:00:00+00:00",
+      "end": "2026-07-20 00:00:00+00:00",
+      "content_hash": "016c198bfdb0d372",
+      "metadata": {
+        "project": "en.wikipedia",
+        "article": "Christmas",
+        "agent": "user"
+      }
+    },
+    {
+      "series_id": "entsoe:load:PL",
+      "source": "entsoe",
+      "domain": "electricity",
+      "freq": "h",
+      "n_obs": 13560,
+      "n_missing": 0,
+      "start": "2025-01-01 00:00:00+00:00",
+      "end": "2026-07-19 23:00:00+00:00",
+      "content_hash": "bae65bb378dbcbf3",
+      "metadata": {
+        "zone": "PL",
+        "eic": "10YPL-AREA-----S",
+        "units": "MW",
+        "document_type": "A65"
+      }
+    },
+    {
+      "series_id": "entsoe:load:DE_LU",
+      "source": "entsoe",
+      "domain": "electricity",
+      "freq": "h",
+      "n_obs": 13560,
+      "n_missing": 0,
+      "start": "2025-01-01 00:00:00+00:00",
+      "end": "2026-07-19 23:00:00+00:00",
+      "content_hash": "77e9cf3012b0dd84",
+      "metadata": {
+        "zone": "DE_LU",
+        "eic": "10Y1001A1001A82H",
+        "units": "MW",
+        "document_type": "A65"
+      }
+    },
+    {
+      "series_id": "entsoe:load:ES",
+      "source": "entsoe",
+      "domain": "electricity",
+      "freq": "h",
+      "n_obs": 13560,
+      "n_missing": 42,
+      "start": "2025-01-01 00:00:00+00:00",
+      "end": "2026-07-19 23:00:00+00:00",
+      "content_hash": "8e5d90db93ae51a5",
+      "metadata": {
+        "zone": "ES",
+        "eic": "10YES-REE------0",
+        "units": "MW",
+        "document_type": "A65"
+      }
+    }
+  ]
+}

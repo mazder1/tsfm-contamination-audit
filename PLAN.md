@@ -33,10 +33,16 @@ Ordering rule: **cheap and decisive first, expensive and ambiguous last.**
 **Gate:** pre-registration committed before any model is run; one snapshot captured with a
 provenance manifest.
 
-**Status: complete.** Committed `efb1540` (public, CI green). First snapshot: 12 series,
-84,750 observations, 2025-01-01 to 2026-07-19, from Open-Meteo and Wikimedia pageviews.
-ENTSO-E pending manual API approval; it skips cleanly and backfills whenever the token
-arrives.
+**Status: complete.** Committed `efb1540` (public, CI green). Current snapshot
+`fresh_20260727`: **15 series, 125,580 observations**, 2025-01-01 to 2026-07-20, from
+Open-Meteo, Wikimedia pageviews, and ENTSO-E.
+
+ENTSO-E API access was granted 2026-07-27 and the full electricity window backfilled in a
+single run across all three bidding zones — which is what the archive-backed source design
+was for, and is the concrete payoff of correcting the accrual claim in `de7e275`.
+
+Grids verified complete: no duplicate timestamps, no missing rows, every series on a
+regular step. One data-quality finding, in Phase 3.5 below.
 
 ---
 
@@ -142,6 +148,32 @@ the surrogate destroys, and it **cannot be audited** until the surrogate is rede
 than contamination. Mitigate by matching domains — fresh electricity load is the null
 control for the Electricity/ETT benchmarks. This is why the ENTSO-E source is load-bearing
 rather than optional.
+
+#### Open decision: the Iberian blackout in `entsoe:load:ES` ⚠
+
+The ES load series has 42 missing hours in exactly two runs:
+
+| Window (UTC) | Length | Reading |
+|---|---|---|
+| 2025-04-28 11:00 → 2025-04-29 21:00 | 35 h | Coincides with the Iberian Peninsula blackout of 2025-04-28 |
+| 2026-07-01 00:00 → 2026-07-01 06:00 | 7 h | Unexplained; short, and on a month boundary where reporting changes are common |
+
+The first one matters. A 35-hour grid collapse is a genuine structural break sitting inside
+the series that is supposed to serve as the **clean null control** for ETT and Electricity —
+the two most-used benchmarks in the field. It is a problem for the null control specifically
+because IAAFT preserves the amplitude distribution, so the outage is inherited by every
+surrogate as scattered noise rather than as one contiguous event. Real and surrogate then
+differ in a way that has nothing to do with memorization, which is precisely the false
+positive Phase 3.5 exists to rule out.
+
+The options are to keep the window, to excise it and treat ES as two segments, or to drop
+ES and rely on PL and DE_LU (both complete) for the electricity null control.
+
+**The decision must be made and committed before Phase 4 runs**, and the reason is not
+technical. Excluding an inconvenient window *before* any model has been scored is a data
+choice; making the same exclusion afterwards is indistinguishable from tuning the data to
+the answer, and the pre-registration exists to make that distinction verifiable. This is
+the first live instance of the discipline Phase 0 was set up to enforce.
 
 **3. Pure noise.** No structure to memorize, so nothing may fire.
 

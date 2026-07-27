@@ -10,7 +10,8 @@ This repository measures that, and ships an evaluation set that cannot be contam
 construction.
 
 **Status: Phase 0 complete.** Pre-registration frozen, environment pinned, fresh benchmark
-collecting. No model has been run yet. See [`PLAN.md`](PLAN.md) for the full phase plan.
+backfilled across all three sources. No model has been run yet. See [`PLAN.md`](PLAN.md)
+for the full phase plan.
 
 ---
 
@@ -171,18 +172,29 @@ observations are not — precisely the recall-vs-transfer separation we want to 
 
 ### ENTSO-E access
 
-Unlike the other two, ENTSO-E is not open on request — API access is granted manually:
+Unlike the other two, ENTSO-E is not open on request — API access is granted manually by
+the Transparency Platform service desk. The route that worked, recorded so it is
+reproducible:
 
 1. Register at <https://transparency.entsoe.eu/>.
-2. Email `transparency@entsoe.eu` from the registered address, subject
-   **"Restful API access"**, stating the account email and asking for API access.
-3. Once granted, generate a **Web Api Security Token** under *Account Settings*.
+2. File a request with the service desk at <https://transparencyplatform.zendesk.com/>
+   from the registered address, asking for RESTful API access and stating the account
+   email and intended usage. (The older `transparency@entsoe.eu` mailbox is widely cited
+   but the Zendesk desk is what answers.) Turnaround was one working day.
+3. Once granted, generate a **Web Api Security Token** under *My Account*.
 4. `cp .env.example .env` and paste the token into `ENTSOE_API_TOKEN`.
 
 `.env` is gitignored and never overrides a real environment variable, so CI and Docker can
 supply the token their own way. A missing token skips the source without failing the fetch.
 
-First snapshot: 12 series, 84,750 observations, 2025-01-01 to 2026-07-19.
+Current snapshot (`fresh_20260727`): **15 series, 125,580 observations**, 2025-01-01 to
+2026-07-20, all three sources live. Access was granted 2026-07-27 and the full window
+backfilled in one run.
+
+**Known gap.** `entsoe:load:ES` is missing 42 hours in two runs — 35 hours from
+2025-04-28 11:00 UTC, coinciding with the Iberian Peninsula blackout, and 7 hours from
+2026-07-01 00:00 UTC. PL and DE_LU are complete. How the blackout window is handled is an
+open decision recorded below, to be fixed before any model is scored.
 
 ---
 
@@ -228,6 +240,11 @@ Deliberately unresolved, with the phase that resolves each:
   Traffic, Weather, M4 subset), confirmed in **Phase 1** against published numbers.
 - Block length for the bootstrap surrogate — **Phase 3**, chosen by a stated criterion, not
   by which value gives the nicer answer.
+- Handling of the 2025-04-28 Iberian blackout window in `entsoe:load:ES` — **Phase 3.5**,
+  and fixed *before* any model is scored. A structural break inside the electricity null
+  control can produce a real-vs-surrogate difference with no memorization behind it.
+  Deciding this after seeing scores would be indistinguishable from fitting the data to the
+  answer, which is the failure mode the pre-registration is for.
 - Near-duplicate window length, normalization, and match threshold — **Phase 6**.
 - Which corpora can actually be searched — **Phase 6**, with the unsearchable ones named.
 - Each model's true data cutoff — **Phase 7**, documenting what was established versus
