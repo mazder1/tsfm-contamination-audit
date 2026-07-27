@@ -46,17 +46,57 @@ regular step. One data-quality finding, in Phase 3.5 below.
 
 ---
 
-## Phase 1 — One model, one dataset, reproduce a published number
+## Phase 1 — One model, two datasets, reproduce a published number
 
 **Goal:** establish that the harness agrees with the literature before attacking it.
 
-- Chronos-base on a dataset from its own paper. Nothing else. No surrogates, no probes.
-- Expect to lose several days to preprocessing conventions — windowing, scaling,
-  aggregation. That is normal, and it is the most valuable debugging in the project.
+Chronos-base only. No surrogates, no probes. Expect to lose several days to preprocessing
+conventions — windowing, scaling, aggregation. That is normal, and it is the most valuable
+debugging in the project.
 
-**Gate:** our MASE matches the published MASE. If it doesn't, stop and find out why.
-Every downstream number is worthless if the harness disagrees with the paper on the
-paper's own turf. A confirmed failure to reproduce is itself a reportable finding.
+### Two datasets, in this order
+
+**1. M4 first.** The competition published exact per-method MASE, so the target is
+unambiguous and the gate can stay hard. This tests whether our scoring arithmetic and model
+invocation are correct.
+
+**2. ETTh1 second.** Chronos reports zero-shot results as aggregated relative scores rather
+than a clean per-dataset MASE, so the target has to come from independent papers, which
+disagree among themselves. We get a range, not a number. This tests whether our hourly
+windowing and scaling conventions match the field's — and it is the plumbing the rest of
+the project actually reuses, including the Phase 3.5 electricity null control.
+
+### Why both, rather than either
+
+They fail differently, and that is the point. A single ambiguous test leaves us unable to
+read its own failure:
+
+| M4 | ETTh1 | Reading |
+|---|---|---|
+| pass | in range | Harness sound. Proceed. |
+| pass | out of range | Core is correct; ETTh1 conventions are wrong. One place to look. |
+| fail | — | Something basic is broken. Do not touch ETTh1 until it is fixed. |
+
+With ETTh1 alone, an out-of-range result cannot distinguish "our harness is broken" from
+"our conventions differ from those papers", and days go into guessing which. Running the
+sharp test first makes the fuzzy one interpretable.
+
+Ordering follows this plan's own rule: cheap and decisive first, expensive and ambiguous
+last.
+
+**Gate — two parts:**
+
+- **Hard:** our M4 MASE matches the published MASE. If it does not, stop and find out why.
+- **Soft:** our ETTh1 MASE falls within the spread of independently published values. Out
+  of range does not halt the project, because M4 passing localises the fault — but it must
+  be chased down and written up before Phase 3, not waved through.
+
+Every downstream number is worthless if the harness disagrees with the literature on the
+literature's own turf. A confirmed failure to reproduce is itself a reportable finding.
+
+**Byproduct:** reading the four model configs fills `config.MAX_AUDITED_CONTEXT`, which is
+`None` until this phase and currently blocks the Phase 3.5 segmentation rule from producing
+an actual minimum length.
 
 ---
 
