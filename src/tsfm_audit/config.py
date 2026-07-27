@@ -62,6 +62,9 @@ class ModelSpec:
     # README "Establishing each model's cutoff". Used only as a lower bound.
     released: dt.date
     notes: str = ""
+    # Hard architectural ceiling on input length, or None where the model
+    # accepts arbitrary context. Read from the pinned checkpoints, not assumed.
+    context_cap: int | None = None
 
 
 AUDITED_MODELS: tuple[ModelSpec, ...] = (
@@ -70,28 +73,38 @@ AUDITED_MODELS: tuple[ModelSpec, ...] = (
         repo_id="amazon/chronos-t5-base",
         org="Amazon",
         released=dt.date(2024, 3, 13),
-        notes="T5 over quantised value tokens.",
+        notes="T5 over quantised value tokens. config.json: n_positions 512, "
+        "chronos_config.context_length 512. Longer input is truncated.",
+        context_cap=512,
     ),
     ModelSpec(
         key="timesfm-200m",
         repo_id="google/timesfm-1.0-200m",
         org="Google",
         released=dt.date(2024, 5, 1),
-        notes="Decoder-only patched. Trained heavily on Google Trends / Wiki pageviews.",
+        notes="Decoder-only patched. Trained heavily on Google Trends / Wiki pageviews. "
+        "Model card: context up to 512 points, and requires contiguous input — "
+        "which makes the gap-segmentation rule a hard requirement, not just hygiene.",
+        context_cap=512,
     ),
     ModelSpec(
         key="moirai-base",
         repo_id="Salesforce/moirai-1.0-R-base",
         org="Salesforce",
         released=dt.date(2024, 3, 1),
-        notes="Masked encoder. Training corpus (LOTSA) is public — our ground-truth anchor.",
+        notes="Masked encoder. Training corpus (LOTSA) is public — our ground-truth anchor. "
+        "config.json max_seq_len 512 counts *patches*, not time steps "
+        "(patch_sizes 8-128), so raw context is effectively unbounded.",
+        context_cap=None,
     ),
     ModelSpec(
         key="lag-llama",
         repo_id="time-series-foundation-models/Lag-Llama",
         org="Morgan Stanley / Mila et al.",
         released=dt.date(2024, 2, 5),
-        notes="Small decoder-only with lag features.",
+        notes="Small decoder-only with lag features. Trained at context 32; the model "
+        "card recommends tuning context per dataset, which we deliberately do not do.",
+        context_cap=None,
     ),
 )
 
@@ -166,19 +179,29 @@ PROTOCOL = Protocol()
 # Forecast horizon used throughout the audit.
 EVAL_HORIZON = 24
 
-# Largest context window across AUDITED_MODELS. Measured from the model configs
-# in Phase 1; None until then.
+# Context fed to every audited model at evaluation.
 #
-# The *rule* is what is pre-registered, not the number — the same construction
-# used for Protocol.detection_floor. Fixing the rule now and measuring the value
-# later is what stops the threshold from being chosen to suit a result. Taking
-# the maximum across models (rather than each model's own context) keeps every
-# model scored on an identical set of segments, so the null control cannot
-# quietly change shape between models.
-MAX_AUDITED_CONTEXT: int | None = None
+# An earlier draft defined this as "the largest context across audited models",
+# measured from the configs in Phase 1. Reading the pinned checkpoints showed
+# that quantity does not exist: Chronos and TimesFM cap at 512 by architecture,
+# while Moirai and Lag-Llama accept arbitrary lengths (see ModelSpec.context_cap).
+# There is no maximum to take.
+#
+# So context is a pre-registered *choice*, not a measured model property. 512 is
+# the largest value every audited model can actually accept — above it, half the
+# audit silently truncates; below it, the two capped models are handicapped for
+# no reason.
+#
+# One value for all four models, not one per model. Per-model tuning would make
+# the context another free parameter, and Lag-Llama's own README recommends
+# tuning it per dataset — precisely the degree of freedom a contamination audit
+# must not have. The cost is that Lag-Llama, trained at context 32, is evaluated
+# far outside its training regime; that is a real handicap and is reported as
+# one rather than tuned away.
+EVAL_CONTEXT = 512
 
 
-def min_usable_segment_length(max_context: int | None = None) -> int:
+def min_usable_segment_length() -> int:
     """Shortest segment that can still be scored: one context plus one horizon.
 
     A segment shorter than this cannot produce even a single forecast, so it is
@@ -186,13 +209,7 @@ def min_usable_segment_length(max_context: int | None = None) -> int:
     no tunable gap-length threshold, because any such threshold would have been
     picked knowing which series it excluded.
     """
-    ctx = MAX_AUDITED_CONTEXT if max_context is None else max_context
-    if ctx is None:
-        raise ValueError(
-            "MAX_AUDITED_CONTEXT is unset — it is measured from the model configs in "
-            "Phase 1. Pass max_context explicitly for a provisional figure."
-        )
-    return ctx + EVAL_HORIZON
+    return EVAL_CONTEXT + EVAL_HORIZON
 
 
 # --------------------------------------------------------------------------

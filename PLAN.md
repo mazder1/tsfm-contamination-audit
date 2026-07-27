@@ -94,9 +94,30 @@ last.
 Every downstream number is worthless if the harness disagrees with the literature on the
 literature's own turf. A confirmed failure to reproduce is itself a reportable finding.
 
-**Byproduct:** reading the four model configs fills `config.MAX_AUDITED_CONTEXT`, which is
-`None` until this phase and currently blocks the Phase 3.5 segmentation rule from producing
-an actual minimum length.
+### Context length: done, and it corrected the segmentation rule
+
+Read from the pinned checkpoints rather than assumed:
+
+| Model | Context | Evidence |
+|---|---|---|
+| Chronos-base | hard cap **512** | `config.json`: `n_positions` 512, `chronos_config.context_length` 512 |
+| TimesFM-200m | hard cap **512** | model card: "context lengths up to 512 time points" |
+| Moirai-base | **no cap** | `max_seq_len` 512 counts *patches*, not time steps (`patch_sizes` 8–128) |
+| Lag-Llama | **no cap** | trained at 32; card recommends tuning across 32–512 |
+
+This invalidated the original phrasing of the segmentation minimum, which took "the largest
+context across audited models". Two models have an architectural ceiling and two accept
+anything, so there is no maximum to take.
+
+`config.EVAL_CONTEXT = 512` replaces it: a pre-registered choice, being the largest value
+*every* model can accept. Above it, Chronos and TimesFM silently truncate; below it, both
+are handicapped for nothing. One value for all four rather than one each — per-model tuning
+would add a free parameter, and Lag-Llama's card explicitly recommends tuning context per
+dataset, which is exactly the degree of freedom this audit must not have. The cost is that
+Lag-Llama runs far outside its training regime; that is reported, not tuned away.
+
+Incidentally, TimesFM's card requires contiguous input with no holes — so the Phase 3.5 gap
+segmentation is a hard requirement of an audited model, not only our own hygiene.
 
 ---
 
@@ -235,9 +256,13 @@ Segment ids are numbered over *all* segments found, not just the survivors, so a
 segment leaves a visible hole in the numbering rather than disappearing silently.
 
 Implemented in `series.split_at_gaps`, with the minimum length from
-`config.min_usable_segment_length`. `config.MAX_AUDITED_CONTEXT` is `None` until Phase 1
-reads it from the model configs — the same construction as `detection_floor`: the rule is
-pre-registered, the number is measured. A test asserts it stays `None`.
+`config.min_usable_segment_length` — currently **536** (context 512 + horizon 24).
+
+**Correction to an earlier draft of this rule.** It originally set the minimum from "the
+largest context across audited models", to be measured from the configs in Phase 1. Reading
+the pinned checkpoints showed that quantity does not exist — see Phase 1 below. Context is
+now a pre-registered choice of 512, which is the largest value every audited model can
+accept. Corrected before any model was scored.
 
 **3. Pure noise.** No structure to memorize, so nothing may fire.
 

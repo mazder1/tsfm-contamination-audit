@@ -158,11 +158,26 @@ The deliberate omission is a gap-length threshold. "Split only at gaps longer th
 would be simpler, but *N* would be chosen with full knowledge of which windows it excluded.
 The rule above has no such parameter — the only number in it comes from the models.
 
-Minimum length is `max(context) + horizon` across audited models, not each model's own,
-so every model is scored on an identical set of segments and the null control cannot change
-shape between them. `config.MAX_AUDITED_CONTEXT` is `None` until Phase 1 reads it from the
-model configs, and a test asserts that — the rule is pre-registered here, the number is a
-measurement, exactly as with `δ` above.
+Minimum length is `EVAL_CONTEXT + EVAL_HORIZON` = **536**, one value for every model rather
+than one each, so all four are scored on an identical set of segments and the null control
+cannot change shape between them.
+
+`EVAL_CONTEXT` is 512 because that is the largest context *every* audited model accepts:
+
+| Model | Context | Evidence |
+|---|---|---|
+| Chronos-base | hard cap 512 | `config.json`: `n_positions`, `chronos_config.context_length` |
+| TimesFM-200m | hard cap 512 | model card: "context lengths up to 512 time points" |
+| Moirai-base | no cap | `max_seq_len` counts patches, not time steps |
+| Lag-Llama | no cap | trained at 32; card recommends tuning 32–512 |
+
+Above 512 the first two silently truncate; below it they are handicapped for nothing.
+Per-model tuning is refused deliberately — Lag-Llama's card recommends tuning context per
+dataset, which is the exact degree of freedom a contamination audit must not have. The cost
+is Lag-Llama running far outside its training regime, reported rather than tuned away.
+
+TimesFM additionally requires contiguous input with no holes, so segmentation is a hard
+requirement of an audited model, not only our own hygiene.
 
 On the current snapshot this affects one series: `entsoe:load:ES` splits into `#s1`
 (2,819 h) and `#s2` (10,250 h), with a 449-hour tail after the July gap dropped as too

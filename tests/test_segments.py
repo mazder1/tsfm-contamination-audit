@@ -7,7 +7,6 @@ cannot drift from the pre-registered one.
 
 import numpy as np
 import pandas as pd
-import pytest
 
 from tsfm_audit import config
 from tsfm_audit.series import Series, split_at_gaps
@@ -83,13 +82,23 @@ def test_segments_carry_parent_provenance():
 
 
 def test_min_usable_length_is_context_plus_horizon():
-    assert config.min_usable_segment_length(512) == 512 + config.EVAL_HORIZON
+    assert config.min_usable_segment_length() == config.EVAL_CONTEXT + config.EVAL_HORIZON
+    assert config.min_usable_segment_length() == 536
 
 
-def test_max_audited_context_is_unset_until_phase_1():
-    # Mirrors Protocol.detection_floor: the rule is pre-registered, the number
-    # is measured later. A value appearing here before Phase 1 means someone
-    # guessed it, which is what the None is guarding against.
-    assert config.MAX_AUDITED_CONTEXT is None
-    with pytest.raises(ValueError, match="Phase 1"):
-        config.min_usable_segment_length()
+def test_eval_context_fits_every_capped_model():
+    # The pre-registered context must be one every audited model can actually
+    # accept. If a checkpoint caps below it, that model would silently truncate
+    # and be scored on less history than the others.
+    for model in config.AUDITED_MODELS:
+        if model.context_cap is not None:
+            assert config.EVAL_CONTEXT <= model.context_cap, model.key
+
+
+def test_eval_context_is_the_largest_that_fits_everywhere():
+    # 512 is not arbitrary: it is the tightest cap across the audit. Raising it
+    # would truncate Chronos and TimesFM; lowering it would handicap them for
+    # no reason.
+    caps = [m.context_cap for m in config.AUDITED_MODELS if m.context_cap is not None]
+    assert caps, "no model reports a context cap - the pinned configs were not read"
+    assert config.EVAL_CONTEXT == min(caps)
