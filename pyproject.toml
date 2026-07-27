@@ -23,6 +23,10 @@ models = [
     "transformers>=4.40",
     "chronos-forecasting>=1.4",
 ]
+# Published-benchmark reproduction (Phase 1). Pulls the Chronos eval datasets.
+eval = [
+    "datasets>=2.18",
+]
 dev = [
     "pytest>=8.0",
     "ruff>=0.6",
