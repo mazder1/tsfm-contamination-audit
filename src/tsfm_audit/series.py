@@ -10,6 +10,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from . import config
+
 
 @dataclass
 class Series:
@@ -182,6 +184,10 @@ def series_summary(series: list[Series]) -> list[dict]:
             "freq": s.freq,
             "n_obs": len(s),
             "n_missing": s.n_missing,
+            # Forecast origins available at the pre-registered context/horizon.
+            # Carried in the manifest so thin series cannot be reported as if
+            # they carried the same weight as long ones.
+            "n_forecast_windows": config.n_forecast_windows(len(s)),
             "start": str(s.timestamps[0]) if len(s) else None,
             "end": str(s.timestamps[-1]) if len(s) else None,
             "content_hash": s.content_hash,

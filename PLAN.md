@@ -266,6 +266,21 @@ accept. Corrected before any model was scored.
 
 **3. Pure noise.** No structure to memorize, so nothing may fire.
 
+#### Decided: unequal power across domains is accepted and reported ✓
+
+A uniform context of 512 observations leaves the hourly series ~13,000 forecast origins and
+the daily Wikipedia series **31**. Shortening the context for daily data would fix that, at
+the price of the context no longer being one value applied to everything — a dial we
+deliberately do not have.
+
+So it is accepted. The consequence is that web traffic — the domain included *because*
+TimesFM trained on Wikipedia pageviews, and therefore the sharpest recall-vs-transfer test
+available — is also the domain with the least power behind it. A null result there is weak
+evidence, not an acquittal, and must be reported as such.
+
+`config.n_forecast_windows` is recorded per series in every manifest so the disparity is
+visible in the data rather than only in prose. Decided before any model was scored.
+
 **Gate — hard stop:** the measured gap must be statistically indistinguishable from zero in
 all three, at the same FDR level used for the real sweep. Any firing means the surrogate is
 broken; fix it and re-run before Phase 4.
@@ -316,6 +331,10 @@ controlled corpus this is a couple of GPU-hours, not days.
 
 **Never report a single global average.** Averaging across heterogeneous series hides
 everything. Never report a gap without a baseline beside it and an interval around it.
+
+**Report window counts beside firing rates.** A 31-window daily series and a 13,000-window
+hourly series do not carry the same weight, and a table that shows only firing rates makes
+them look as if they do.
 
 ---
 

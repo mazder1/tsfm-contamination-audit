@@ -179,6 +179,25 @@ is Lag-Llama running far outside its training regime, reported rather than tuned
 TimesFM additionally requires contiguous input with no holes, so segmentation is a hard
 requirement of an audited model, not only our own hygiene.
 
+### Reported power, not assumed power
+
+A single context of 512 observations means very different things at different frequencies.
+On hourly data it is three weeks, leaving ~13,000 forecast origins per series. On the daily
+Wikipedia series it is most of the series: 566 observations minus 536 leaves **31** origins.
+
+That is accepted rather than fixed. Shortening the context for daily data would restore the
+power, but it would cost the property that makes the context defensible in the first place
+— one value, chosen once, applied to everything, with no per-case dial.
+
+The cost is real and worth stating plainly: web traffic is the *deliberately adversarial*
+domain, included because TimesFM is documented as training on Wikipedia pageviews. So the
+domain where we most want statistical power is the one that has least of it. Its intervals
+will be wide, and a null result there is weak evidence rather than a clean acquittal.
+
+The obligation this creates is that the disparity stays visible. `n_forecast_windows` is
+recorded per series in every snapshot manifest, and web-traffic firing rates are never
+presented as comparable in precision to the hourly domains.
+
 On the current snapshot this affects one series: `entsoe:load:ES` splits into `#s1`
 (2,819 h) and `#s2` (10,250 h), with a 449-hour tail after the July gap dropped as too
 short. Segment numbering runs over all segments found, so a dropped one leaves a visible

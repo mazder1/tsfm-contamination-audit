@@ -95,6 +95,21 @@ def test_eval_context_fits_every_capped_model():
             assert config.EVAL_CONTEXT <= model.context_cap, model.key
 
 
+def test_forecast_window_count():
+    need = config.min_usable_segment_length()
+    assert config.n_forecast_windows(need) == 1
+    assert config.n_forecast_windows(need - 1) == 0
+    assert config.n_forecast_windows(0) == 0
+    assert config.n_forecast_windows(need + 99) == 100
+
+
+def test_daily_web_traffic_series_are_thin_by_design():
+    # 566 daily observations is the current Wikipedia series length. The low
+    # window count is accepted, not fixed - this test exists so the number is
+    # asserted somewhere rather than only described in prose.
+    assert config.n_forecast_windows(566) == 31
+
+
 def test_eval_context_is_the_largest_that_fits_everywhere():
     # 512 is not arbitrary: it is the tightest cap across the audit. Raising it
     # would truncate Chronos and TimesFM; lowering it would handicap them for

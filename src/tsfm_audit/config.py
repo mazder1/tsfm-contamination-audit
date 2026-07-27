@@ -212,6 +212,19 @@ def min_usable_segment_length() -> int:
     return EVAL_CONTEXT + EVAL_HORIZON
 
 
+def n_forecast_windows(n_obs: int) -> int:
+    """How many forecast origins a series of this length supports.
+
+    Recorded per series in every manifest rather than left implicit, because a
+    uniform context means very different things at different frequencies: 512
+    observations is three weeks of hourly data but a year and a half of daily
+    data. The daily web-traffic series clear the minimum by ~30 windows against
+    ~13,000 for the hourly ones, and that disparity has to be visible in the
+    data rather than remembered from a README.
+    """
+    return max(0, n_obs - min_usable_segment_length() + 1)
+
+
 # --------------------------------------------------------------------------
 # Fresh benchmark sources
 # --------------------------------------------------------------------------
