@@ -1,2 +1,4 @@
 task,model,n_instances,horizon,MASE,ref_MASE,d_MASE_%,device,dtype,seed,secs
 ett1/H/short,chronos-base,140,48,0.8306229350081678,0.84,-1.116317260932407,cuda,bfloat16,3171009274,409.4
+ett1/H/short,Salesforce/moirai-1.1-R-base,140,48,0.8840498329365033,0.885,-0.1073635099996282,cuda,float32,3808729325,2.3
+ett1/H/short,Salesforce/moirai-1.0-R-base,140,48,0.8787163430611059,0.885,-0.7100177332083729,cuda,float32,3808729325,2.1
