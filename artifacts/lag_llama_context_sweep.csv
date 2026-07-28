@@ -1,0 +1,2 @@
+task,context_length,MASE,ref_MASE,d_MASE_%,n_instances,device,secs
+ett1/H/short,32,0.9254733973884358,0.9874780774116516,-6.279094335515847,140,cuda,287.7

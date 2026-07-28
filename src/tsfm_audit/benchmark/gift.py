@@ -125,10 +125,20 @@ class GiftWindow:
     freq: str
     series_index: int
     window_index: int
+    # Timestamp of the first observation in ``past``. Every window of a series
+    # shares it, since the history always begins at the series start and only
+    # its length varies. Needed by models that use calendar features - Lag-Llama
+    # does, Moirai does not.
+    start: pd.Timestamp | None = None
 
 
 def rolling_windows(
-    values: np.ndarray, horizon: int, windows: int, freq: str, series_index: int
+    values: np.ndarray,
+    horizon: int,
+    windows: int,
+    freq: str,
+    series_index: int,
+    start: pd.Timestamp | None = None,
 ) -> list[GiftWindow]:
     """Generate the rolling test instances for one univariate series.
 
@@ -155,6 +165,7 @@ def rolling_windows(
                 freq=freq,
                 series_index=series_index,
                 window_index=i,
+                start=start,
             )
         )
     return out
@@ -175,20 +186,24 @@ def load_task(key: str) -> tuple[list[GiftWindow], int]:
     freq = str(ds[0]["freq"])
     horizon = prediction_length(task, freq)
 
-    series: list[np.ndarray] = []
+    series: list[tuple[np.ndarray, pd.Timestamp]] = []
     for row in ds:
         target = np.asarray(row["target"])
+        # ``start`` arrives as a 0-dim numpy datetime64 array, not a scalar;
+        # the reference loader calls .item() on it for the same reason.
+        raw_start = row["start"]
+        start = pd.Timestamp(raw_start.item() if hasattr(raw_start, "item") else raw_start)
         if target.ndim == 1:
-            series.append(target)
+            series.append((target, start))
         else:
-            series.extend(target[d] for d in range(target.shape[0]))
+            series.extend((target[d], start) for d in range(target.shape[0]))
 
-    min_length = min(len(s) for s in series)
+    min_length = min(len(s) for s, _ in series)
     windows = n_windows(task, min_length, horizon)
 
     out: list[GiftWindow] = []
-    for index, values in enumerate(series):
-        out.extend(rolling_windows(values, horizon, windows, freq, index))
+    for index, (values, start) in enumerate(series):
+        out.extend(rolling_windows(values, horizon, windows, freq, index, start))
     return out, horizon
 
 

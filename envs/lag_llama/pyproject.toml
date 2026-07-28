@@ -1,0 +1,34 @@
+# Lag-Llama's environment, pinned independently.
+#
+# Not on PyPI: installed from the model authors' GitHub repository. Pins
+# gluonts[torch]<=0.14.4, which conflicts with the main environment, and ships a
+# Lightning .ckpt rather than safetensors.
+#
+#   cd envs/lag_llama && uv sync
+#   uv run python run_gift.py --task ett1/H/short
+
+[project]
+name = "tsfm-audit-lag-llama"
+version = "0.1.0"
+description = "Lag-Llama runner for the contamination audit"
+requires-python = ">=3.11,<3.12"
+dependencies = [
+    "lag-llama",
+    # Declared explicitly so [tool.uv.sources] applies: it only redirects direct
+    # dependencies, and a transitively-resolved torch lands as the CPU wheel.
+    "torch>=2.0,<2.5",
+    "datasets>=2.17",
+    "huggingface-hub>=0.23",
+    "pandas>=2.0,<3.0",
+    "pyarrow>=16.0",
+    "setuptools>=68,<81",
+]
+
+[tool.uv.sources]
+lag-llama = { git = "https://github.com/time-series-foundation-models/lag-llama.git" }
+torch = { index = "pytorch-cu124" }
+
+[[tool.uv.index]]
+name = "pytorch-cu124"
+url = "https://download.pytorch.org/whl/cu124"
+explicit = true
