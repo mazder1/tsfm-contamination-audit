@@ -1,0 +1,7 @@
+{
+  "task": "ett1/H/short",
+  "n_windows": 20,
+  "context_len": 512,
+  "horizon": 48,
+  "contexts_sha256": "cfe8ec34d9c4260bcc0bf709251055ebbf43fb66e799dc4cec1b8be9a55bdaee"
+}

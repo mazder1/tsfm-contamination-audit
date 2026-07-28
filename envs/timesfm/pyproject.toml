@@ -1,0 +1,38 @@
+# TimesFM's PyTorch environment (Windows, GPU).
+#
+# The audited checkpoint google/timesfm-1.0-200m is a JAX/PAX artifact, and JAX
+# cannot run it here: jaxlib publishes no cp311 Windows wheels and has no CUDA
+# support on Windows at all. Google also published a PyTorch port of the same
+# model, which does run on this GPU - but a port is not automatically the same
+# function, so it is used only once equivalence is demonstrated. See
+# ../timesfm_jax/ for the other half of that test.
+#
+#   cd envs/timesfm && uv sync
+#   uv run python run_equivalence.py
+
+[project]
+name = "tsfm-audit-timesfm"
+version = "0.1.0"
+description = "TimesFM PyTorch runner for the contamination audit"
+requires-python = ">=3.11,<3.12"
+dependencies = [
+    "timesfm[torch]==1.2.9",
+    "torch>=2.0,<2.5",
+    "numpy>=1.26,<2.0",
+    "pandas>=2.0,<3.0",
+]
+
+[tool.uv.sources]
+torch = { index = "pytorch-cu124" }
+
+[[tool.uv.index]]
+name = "pytorch-cu124"
+url = "https://download.pytorch.org/whl/cu124"
+explicit = true
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]

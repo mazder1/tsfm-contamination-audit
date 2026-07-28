@@ -448,6 +448,44 @@ and say so plainly.
 | **Threshold** | Derived from the Phase 4 detection floor | Principled rather than invented; fixed before results are seen |
 | **Environments** | One per model stack, independently pinned | Each model runs in the configuration its authors tested; see below |
 
+### TimesFM checkpoint equivalence ⭐
+
+The audited checkpoint `google/timesfm-1.0-200m` is a JAX/PAX artifact and cannot run on the
+host: `jaxlib` ships no cp311 Windows wheels, and JAX has no CUDA support on Windows at all.
+Google also published `google/timesfm-1.0-200m-pytorch`, which runs on the host GPU.
+
+Using the port without evidence would place an unverified assumption under a quarter of the
+audit - the exact failure mode this project accuses others of. So the substitution is earned.
+
+**Why the test is clean.** TimesFM 1.0 is deterministic: it emits quantile heads rather than
+sampling trajectories. Feeding both runtimes identical inputs is therefore an equality check
+with a tolerance for float32 arithmetic, not a statistical comparison, and any MASE
+difference is systematic rather than noise. This is a stronger position than was available
+for Chronos.
+
+**Design.** The runtimes never coexist. Inputs are frozen once on the host (with a SHA-256
+of the contexts), the JAX side runs in a Linux container and returns a `.npz`, the PyTorch
+side runs on the host, and a comparator reads both. The container's job is deliberately tiny
+- load a checkpoint, read an array, write an array - so it can be executed by anyone without
+this project's context. See `envs/timesfm_jax/README.md`.
+
+**Pass criteria, fixed before either side was run:**
+
+| Criterion | Limit |
+|---|---|
+| Median relative difference across all forecast points | < 1e-3 |
+| Difference in resulting MASE | < 0.5% |
+
+Both must hold. If they pass, the port stands in for the JAX checkpoint and the substitution
+is recorded as measured. If they fail, the substitution is not justified: TimesFM runs
+through JAX in a container for the whole audit, or is reported as unauditable on this
+hardware. A disagreement between two official releases of one model would itself be worth
+reporting.
+
+Both sides pin `timesfm==1.2.9`, so the comparison is between one library's two backends
+rather than between two library versions - which would confound a port difference with a
+version difference.
+
 ### One environment per model stack ⭐
 
 The four audited models cannot share a Python environment. `uni2ts`, which loads Moirai,
