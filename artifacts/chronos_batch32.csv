@@ -1,0 +1,2 @@
+dataset,n_series,horizon,n_seeds,MASE,ref_MASE,d_MASE_%,band_%,pass,WQL,ref_WQL,d_WQL_%,device,dtype,secs,secs_per_series
+monash_traffic,862,24,1,0.8049857222328612,0.8015262383138622,0.43161206129404556,4.390337501630226,True,0.2542118331842302,0.2556515398214092,-0.5631519521395233,cuda,bfloat16,1415.8,1.6424

@@ -32,6 +32,18 @@ dev = [
     "ruff>=0.6",
 ]
 
+# PyTorch's default PyPI wheel is CPU-only on Windows, which made the Phase 1
+# sweep a ~62 hour job on a machine with an idle RTX 3070. Pull the CUDA build
+# instead. cu126 rather than cu130: a CUDA 13.x driver runs it via backward
+# compatibility, and it is the better-trodden path for Ampere.
+[[tool.uv.index]]
+name = "pytorch-cu126"
+url = "https://download.pytorch.org/whl/cu126"
+explicit = true
+
+[tool.uv.sources]
+torch = { index = "pytorch-cu126" }
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
