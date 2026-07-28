@@ -123,6 +123,8 @@ def main() -> int:
     parser.add_argument("--out", default="lag_llama_context_sweep.csv")
     args = parser.parse_args()
 
+    out = REPO_ROOT / "artifacts" / args.out
+    out.parent.mkdir(parents=True, exist_ok=True)
     device = "cuda" if torch.cuda.is_available() else "cpu"
     windows, horizon = gift.load_task(args.task)
     freq = windows[0].freq
@@ -162,17 +164,26 @@ def main() -> int:
         )
         print(
             f"  context {context_length:<5} MASE={our_mase:.4f}  "
-            f"({dev:+.2f}% vs published)  {elapsed:.0f}s"
+            f"({dev:+.2f}% vs published)  {elapsed:.0f}s",
+            flush=True,
+        )
+        # Written after every context, not at the end. Two GPU runs have been
+        # killed mid-sweep by something outside this process, and a sweep that
+        # dies on its third value should not discard the first two.
+        existing = pd.read_csv(out) if out.exists() else None
+        combined = pd.DataFrame(rows) if existing is None else pd.concat(
+            [existing[~existing["context_length"].isin([context_length])], pd.DataFrame(rows)],
+            ignore_index=True,
+        )
+        combined.drop_duplicates(subset=["task", "context_length"], keep="last").to_csv(
+            out, index=False
         )
 
     if not rows:
         print("\nno context length produced a result")
         return 1
 
-    frame = pd.DataFrame(rows)
-    out = REPO_ROOT / "artifacts" / args.out
-    out.parent.mkdir(parents=True, exist_ok=True)
-    frame.to_csv(out, index=False)
+    frame = pd.read_csv(out)
 
     best = frame.iloc[frame["d_MASE_%"].abs().argmin()]
     print(
