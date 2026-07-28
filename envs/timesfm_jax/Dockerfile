@@ -20,22 +20,31 @@ ENV DEBIAN_FRONTEND=noninteractive \
     PYTHONUNBUFFERED=1 \
     HF_HUB_DISABLE_PROGRESS_BARS=1
 
+# Python 3.10 specifically. timesfm's PAX extra pins paxml and lingvo to
+# python_version == "3.10", so 3.11 - the version the rest of this project uses -
+# silently drops the PAX backend and leaves nothing to compare against.
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        python3.11 python3.11-venv python3-pip git \
+        software-properties-common \
+    && add-apt-repository -y ppa:deadsnakes/ppa \
+    && apt-get update && apt-get install -y --no-install-recommends \
+        python3.10 python3.10-venv python3.10-dev python3-pip git \
     && rm -rf /var/lib/apt/lists/*
 
-RUN python3.11 -m venv /venv
+RUN python3.10 -m venv /venv
 ENV PATH=/venv/bin:$PATH
 
-# Same timesfm version as the PyTorch side. Comparing one library's two backends
-# is a cleaner test than comparing two library versions.
+# Both backends in one image, which is not a convenience but the point: the
+# comparison is then between one library's two backends on one machine with one
+# Python, differing only in the runtime. It is also forced - timesfm's "torch"
+# extra itself requires jax[cuda12], which has no Windows wheels, so there is no
+# host-side PyTorch environment to compare from.
 RUN pip install --no-cache-dir --upgrade pip \
-    && pip install --no-cache-dir "numpy>=1.26,<2.0" "timesfm[pax]==1.2.9" \
-    && pip install --no-cache-dir "jax[cuda12]"
+    && pip install --no-cache-dir "numpy>=1.26,<2.0" "timesfm[pax,torch]==1.2.9"
 
 WORKDIR /work
 COPY run_equivalence.py /work/run_equivalence.py
 
-# Reads /artifacts/timesfm_equivalence_inputs.npz, writes
-# /artifacts/timesfm_forecasts_jax.npz. Mount the host's artifacts directory.
+# Reads /artifacts/timesfm_equivalence_inputs.npz and writes both
+# /artifacts/timesfm_forecasts_jax.npz and timesfm_forecasts_pytorch.npz.
+# Mount the host's artifacts directory.
 ENTRYPOINT ["python", "/work/run_equivalence.py"]

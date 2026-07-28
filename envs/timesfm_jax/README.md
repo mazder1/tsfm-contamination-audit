@@ -26,28 +26,43 @@ The two runtimes never coexist. They exchange files:
    Writes `artifacts/timesfm_equivalence_inputs.npz` plus a sidecar `.json` carrying a
    SHA-256 of the contexts.
 
-2. **Container** runs the JAX checkpoint:
+2. **Container** runs *both* runtimes:
    ```
    docker build -t tsfm-timesfm-jax envs/timesfm_jax
    docker run --rm --gpus all -v "$PWD/artifacts:/artifacts" tsfm-timesfm-jax
    ```
-   Writes `artifacts/timesfm_forecasts_jax.npz`. Drop `--gpus all` to fall back to CPU -
-   slower, same numbers, which is all this test needs.
+   Writes `artifacts/timesfm_forecasts_jax.npz` and `timesfm_forecasts_pytorch.npz`.
+   Without GPU passthrough, add `--backend cpu` after the image name - slower, same numbers,
+   which is all this test needs.
 
-3. **Host** runs the PyTorch port:
-   ```
-   cd envs/timesfm && uv sync && uv run python run_equivalence.py
-   ```
-   Writes `artifacts/timesfm_forecasts_pytorch.npz`.
-
-4. **Host** compares:
+3. **Host** compares:
    ```
    uv run python scripts/timesfm_compare.py
    ```
 
-The container's job is deliberately tiny - load a checkpoint, read an array, write an array.
-No benchmark loading, no metrics. Anyone or anything running step 2 needs no context beyond
-this file.
+The container's job is deliberately small - load checkpoints, read an array, write two
+arrays. No benchmark loading, no metrics. Anyone running step 2 needs no context beyond this
+file.
+
+### Why both runtimes ended up in the container
+
+Originally the PyTorch side was meant to run on the Windows host. It cannot:
+`timesfm[torch]==1.2.9` itself requires `jax[cuda12]`, which publishes no Windows wheels. So
+there is no host-side PyTorch environment to compare from, and `envs/timesfm/` was removed
+after being written.
+
+This is a better test regardless. One machine, one library version, one Python, differing
+only in which runtime executes - the alternative would have confounded a port difference
+with a difference between two operating systems and two CUDA stacks.
+
+It also means **TimesFM runs in this container for the whole audit**, not just for this
+test, which is one of the costs already accepted under *One environment per model stack*.
+
+### Why Python 3.10
+
+`timesfm`'s PAX extra pins `paxml` and `lingvo` to `python_version == "3.10"` exactly. The
+rest of this project is on 3.11, where those pins silently drop out and leave no PAX backend
+to compare against.
 
 ## Pass criteria, fixed before either side was run
 
