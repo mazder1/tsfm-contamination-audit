@@ -86,10 +86,54 @@ last.
 
 **Gate — two parts:**
 
-- **Hard:** our M4 MASE matches the published MASE. If it does not, stop and find out why.
-- **Soft:** our ETTh1 MASE falls within the spread of independently published values. Out
-  of range does not halt the project, because M4 passing localises the fault — but it must
-  be chased down and written up before Phase 3, not waved through.
+- **Hard:** our seasonal-naive MASE matches the published MASE. Deterministic, so exact.
+  If it does not match, stop and find out why. **Status: passed** — all 27 datasets,
+  190,674 series, worst deviation 0.024%, WQL exact.
+- **Soft:** our Chronos MASE falls inside the tolerance derived below. Chronos samples, so
+  exact agreement is not available and a tolerance is unavoidable.
+
+### The Chronos tolerance, derived rather than chosen
+
+Three sources of disagreement, and only two can be measured:
+
+| Source | Measured? | Finding |
+|---|---|---|
+| Sampling (20 draws per forecast) | Yes | Relative SD ≈ `18.5 / √n` percent |
+| dtype (float32 vs the reference's bfloat16) | Yes | ≤ 0.15% effect; bfloat16 is 8.0× slower on CPU |
+| Published figures average 3 training runs, 1 checkpoint released | **No** | Irreducible |
+
+Seed noise scales as `1/√n`: measured relative SD was 6.54% at n=8, 1.61% at n=72, 0.78% at
+n=203, giving `rel_SD · √n` of 18.5, 13.7, 11.2. The conservative constant is **18.5**. A
+single fixed percentage band would therefore be wrong in both directions — far too tight on
+`dominick` (n=100,014, 3σ = 0.18%) and far too loose on `ercot` (n=8, 3σ = 19.6%).
+
+The third source is not noise but a **directional offset**. Averaging three training runs
+reduces error, so a single checkpoint should score slightly *worse* than the published
+figure. Measured offset was +1.0% to +1.6%. That makes the band asymmetric on purpose.
+
+**Per-dataset pass:** relative deviation lies in
+
+```
+[ -3 x 18.5/√n ,  +3.0 + 3 x 18.5/√n ]   percent
+```
+
+**Aggregate pass:** median signed deviation across the 27 lies in `[0, +3]` percent.
+
+**Hard fail — the criterion that actually matters:** a systematically *negative* median.
+Scoring better than an average-of-three-runs cannot be explained by averaging, so it would
+indicate a protocol error — a leaked target, a mis-set offset, an easier split. Sampling
+noise is symmetric; a protocol bug is not. This is the check a symmetric band would miss.
+
+**Exemption:** `monash_covid_deaths` (published MASE 46.9) is judged on absolute scale, not
+percentage. Tiny denominators make relative deviation meaningless there.
+
+**Seed allocation.** Noise is large exactly where series are few, so seeds are spent there:
+5 seeds for datasets with n ≤ 500, averaged; 1 seed above that, where 3σ is already under
+2%. Seeds derive from `config.GLOBAL_SEED` and are recorded with the results.
+
+All of this is fixed before any Chronos number for the full benchmark has been seen. The
+only Chronos figures observed so far are the three probe datasets used to measure the noise
+itself, which is what a tolerance has to be measured from.
 
 Every downstream number is worthless if the harness disagrees with the literature on the
 literature's own turf. A confirmed failure to reproduce is itself a reportable finding.
