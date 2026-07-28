@@ -143,8 +143,14 @@ def main() -> int:
     for context_length in args.contexts:
         try:
             our_mase, elapsed = score_context(
-                ckpt_path, windows, horizon, season, freq,
-                context_length, args.batch_size, device,
+                ckpt_path,
+                windows,
+                horizon,
+                season,
+                freq,
+                context_length,
+                args.batch_size,
+                device,
             )
         except Exception as exc:  # noqa: BLE001
             print(f"  context {context_length:<5} FAILED: {type(exc).__name__}: {exc}")
@@ -171,9 +177,13 @@ def main() -> int:
         # killed mid-sweep by something outside this process, and a sweep that
         # dies on its third value should not discard the first two.
         existing = pd.read_csv(out) if out.exists() else None
-        combined = pd.DataFrame(rows) if existing is None else pd.concat(
-            [existing[~existing["context_length"].isin([context_length])], pd.DataFrame(rows)],
-            ignore_index=True,
+        combined = (
+            pd.DataFrame(rows)
+            if existing is None
+            else pd.concat(
+                [existing[~existing["context_length"].isin([context_length])], pd.DataFrame(rows)],
+                ignore_index=True,
+            )
         )
         combined.drop_duplicates(subset=["task", "context_length"], keep="last").to_csv(
             out, index=False
@@ -187,8 +197,7 @@ def main() -> int:
 
     best = frame.iloc[frame["d_MASE_%"].abs().argmin()]
     print(
-        f"\nclosest: context {int(best['context_length'])} at "
-        f"{best['d_MASE_%']:+.2f}% of published"
+        f"\nclosest: context {int(best['context_length'])} at {best['d_MASE_%']:+.2f}% of published"
     )
     print(f"wrote {out}")
     return 0

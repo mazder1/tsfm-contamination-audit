@@ -32,3 +32,14 @@ torch = { index = "pytorch-cu124" }
 name = "pytorch-cu124"
 url = "https://download.pytorch.org/whl/cu124"
 explicit = true
+
+# Mirrors the root pyproject. Ruff resolves configuration from the *nearest*
+# pyproject.toml, so without this the files here are formatted against ruff's
+# default line length rather than the repository's, and CI's format check fails
+# on code that looked clean locally.
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]

@@ -112,9 +112,7 @@ def main() -> int:
     with torch.no_grad():
         for start in range(0, len(windows), args.batch_size):
             chunk = windows[start : start + args.batch_size]
-            target, observed, is_pad = build_batch(
-                [w.past for w in chunk], args.context_length
-            )
+            target, observed, is_pad = build_batch([w.past for w in chunk], args.context_length)
             samples = model(
                 past_target=target.to(device),
                 past_observed_target=observed.to(device),
