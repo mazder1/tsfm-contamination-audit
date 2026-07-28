@@ -37,8 +37,7 @@ def score(forecaster: ChronosForecaster, config, windows, seed: int) -> dict:
     )
     median_index = QUANTILE_LEVELS.index(0.5)
     scores = [
-        mase(w.target, quantiles[i, :, median_index], w.past, season)
-        for i, w in enumerate(windows)
+        mase(w.target, quantiles[i, :, median_index], w.past, season) for i, w in enumerate(windows)
     ]
     return {
         "MASE": float(np.nanmean(scores)),

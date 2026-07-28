@@ -107,22 +107,46 @@ n=203, giving `rel_SD · √n` of 18.5, 13.7, 11.2. The conservative constant is
 single fixed percentage band would therefore be wrong in both directions — far too tight on
 `dominick` (n=100,014, 3σ = 0.18%) and far too loose on `ercot` (n=8, 3σ = 19.6%).
 
-The third source is not noise but a **directional offset**. Averaging three training runs
-reduces error, so a single checkpoint should score slightly *worse* than the published
-figure. Measured offset was +1.0% to +1.6%. That makes the band asymmetric on purpose.
+The third source is a **constant offset of unknown sign**. We measured our scores running
++1.0% to +1.6% above the published figures on all three probe datasets. The consistency
+across datasets points at the checkpoint rather than at chance: the one revision Amazon
+released is presumably a little below their three-run mean, and that offset then shows up
+everywhere.
+
+*Correction to an earlier draft of this section.* It claimed a single checkpoint must score
+**worse** than an average of three runs, and made a negative deviation a hard failure. That
+is wrong: averaging three *scores* gives the middle of the three, and one run is as likely
+to land above it as below. The observed sign is a property of the released checkpoint, not
+a law. Corrected before any full-benchmark Chronos number was produced.
+
+One ambiguity survives and is left open rather than resolved conveniently: if the three runs
+were combined by averaging their *forecasts* rather than their *scores*, that is an ensemble,
+and an ensemble genuinely does beat a single model. The maintainers' wording does not say
+which. Under that reading a positive offset would be expected; under the other, no sign is.
 
 **Per-dataset pass:** relative deviation lies in
 
 ```
-[ -3 x 18.5/√n ,  +3.0 + 3 x 18.5/√n ]   percent
+[ -2.5 - 3 x 18.5/√n ,  +2.5 + 3 x 18.5/√n ]   percent
 ```
 
-**Aggregate pass:** median signed deviation across the 27 lies in `[0, +3]` percent.
+Symmetric, because the sign is not predictable. The ±2.5% centre absorbs the checkpoint
+offset; the `3 x 18.5/√n` term absorbs sampling noise.
 
-**Hard fail — the criterion that actually matters:** a systematically *negative* median.
-Scoring better than an average-of-three-runs cannot be explained by averaging, so it would
-indicate a protocol error — a leaked target, a mis-set offset, an easier split. Sampling
-noise is symmetric; a protocol bug is not. This is the check a symmetric band would miss.
+**Aggregate pass:** median signed deviation across the 27 within ±2.5 percent.
+
+**Hard fail:** a median offset larger than ±2.5%, in *either* direction, or per-dataset
+deviations that are large where `n` is large. A checkpoint difference is a percent or two;
+ten percent is a bug. What distinguishes them is magnitude, not sign.
+
+**On the constant 18.5.** It is the run-to-run wobble of a *single* series, recovered from
+`rel_SD · √n` on the three probes, which gave 18.5, 13.7 and 11.2. We take the largest,
+which is the widest band and therefore the easiest test to pass. That is a choice that
+flatters us, and it is recorded as one. The justification is that the deterministic
+seasonal-naive gate already validated the scoring arithmetic, so this gate is the lesser
+check, and a false failure would cost days chasing a bug that is not there. Five seeds is
+also a thin basis for a standard deviation - the spread from 11.2 to 18.5 is consistent with
+estimation noise alone.
 
 **Exemption:** `monash_covid_deaths` (published MASE 46.9) is judged on absolute scale, not
 percentage. Tiny denominators make relative deviation meaningless there.
