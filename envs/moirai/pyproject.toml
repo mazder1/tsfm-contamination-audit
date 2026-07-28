@@ -1,0 +1,39 @@
+# Moirai's environment, pinned independently of the main one.
+#
+# uni2ts requires torch<2.5 while Chronos is validated here against torch 2.13,
+# and it pins einops and gluonts against versions the main environment uses.
+# Forcing the two together would mean running at least one model outside the
+# configuration its authors published under - see PLAN.md, "One environment per
+# model stack".
+#
+#   cd envs/moirai && uv sync
+#   uv run python run_gift.py --task ett1/H/short
+
+[project]
+name = "tsfm-audit-moirai"
+version = "0.1.0"
+description = "Moirai runner for the contamination audit"
+requires-python = ">=3.11,<3.12"
+# uni2ts 1.2.0, not 2.0: 2.x targets Moirai 2.0, while the checkpoint under audit
+# is moirai-1.0-R-base. Running a 1.0 checkpoint through a 2.x loader is exactly
+# the kind of untested configuration this whole arrangement exists to avoid.
+# It transitively pins datasets<2.18, which is left to it rather than fought.
+dependencies = [
+    "uni2ts==1.2.0",
+    # Declared explicitly, not left to uni2ts: [tool.uv.sources] only redirects
+    # direct dependencies, so a transitively-resolved torch silently lands as
+    # the CPU wheel and the GPU sits idle.
+    "torch>=2.1,<2.5",
+    "pandas>=2.0,<3.0",
+    "pyarrow>=16.0",
+]
+
+[tool.uv.sources]
+torch = { index = "pytorch-cu124" }
+
+# torch 2.4 is the newest uni2ts accepts; cu124 is its CUDA build and runs on a
+# CUDA 13.x driver by backward compatibility, same as cu126 does in the main env.
+[[tool.uv.index]]
+name = "pytorch-cu124"
+url = "https://download.pytorch.org/whl/cu124"
+explicit = true

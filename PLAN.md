@@ -446,6 +446,42 @@ and say so plainly.
 | **Surrogates** | IAAFT + a nonlinearity-preserving family | Disambiguates memorization from nonlinear skill |
 | **Test** | Per-series rank test → Benjamini–Hochberg FDR | Controls false positives without destroying power |
 | **Threshold** | Derived from the Phase 4 detection floor | Principled rather than invented; fixed before results are seen |
+| **Environments** | One per model stack, independently pinned | Each model runs in the configuration its authors tested; see below |
+
+### One environment per model stack ⭐
+
+The four audited models cannot share a Python environment. `uni2ts`, which loads Moirai,
+requires `torch<2.5`; Chronos is validated here against `torch 2.13`. `uni2ts` also pins
+`einops==0.7.*` against Chronos's 0.8.2 and `gluonts~=0.14.3` against a current 0.16.3.
+Lag-Llama is not on PyPI at all and installs from GitHub, and TimesFM 1.0 is a JAX/PAX
+checkpoint rather than a PyTorch one.
+
+**Rejected: one environment, everything downgraded to `torch 2.4`.** Simpler, one lockfile,
+simpler Docker. Rejected anyway.
+
+The decisive argument is not convenience but *what a shared environment would actually be
+measuring*. Downgrading to satisfy the most restrictive dependency means running Chronos in
+a configuration Amazon never tested, TimesFM in one Google never tested, and so on. Any
+difference from a published number then has an extra candidate explanation - our dependency
+resolution - that we could never rule out. This project's entire output is an accusation
+about other people's numbers, so every avoidable source of doubt in our own has to go.
+
+It would also have cost the Chronos reproduction we already have. Those numbers were
+produced under `torch 2.13`; changing the environment invalidates them and forces a re-run.
+
+**Costs accepted, explicitly:** four lockfiles instead of one, and a materially more complex
+Docker story in Phase 8 - probably one image per stack rather than one image.
+
+**Layout.** `envs/<model>/` holds an independently pinned environment plus a runner that
+emits the same CSV shape as every other. The shared code they all import - `benchmark/gift.py`,
+`analysis/metrics.py` - depends only on numpy, pandas and `datasets`, which every stack can
+satisfy. Aggregation happens in the main environment.
+
+**Note for anyone replicating.** It is tempting to force all four models into one
+`torch 2.4` environment; it resolves, and it will produce numbers. Those numbers are not
+comparable to these, because three of the four models would be running outside the
+configuration they were published under. If you replicate, replicate the environments too -
+each `envs/<model>/uv.lock` is part of the result, not packaging detail.
 
 ### Deliberate breakage (planned)
 
