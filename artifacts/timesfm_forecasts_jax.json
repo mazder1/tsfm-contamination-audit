@@ -1,0 +1,9 @@
+{
+  "runtime": "jax",
+  "backend": "cpu",
+  "repo": "google/timesfm-1.0-200m",
+  "shape": [
+    20,
+    48
+  ]
+}
