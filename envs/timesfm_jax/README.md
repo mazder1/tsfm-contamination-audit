@@ -121,3 +121,35 @@ and the disagreement between two official releases of one model is itself worth 
 Both sides pin `timesfm==1.2.9`. Comparing one library's two backends is a cleaner test than
 comparing two library versions, which would confound a port difference with a version
 difference.
+
+## The configuration these results rest on
+
+Both the equivalence proof and the GIFT-Eval score were produced by one image. Its resolved
+versions are recorded in `artifacts/timesfm_runtime_versions.json` - read out of the image
+with `importlib.metadata` rather than transcribed, and covering the full 249-package
+environment as well as the ones that matter:
+
+| | |
+|---|---|
+| python | 3.10.12 |
+| timesfm | 1.2.9 |
+| jax / jaxlib | 0.4.26 / 0.4.26 |
+| torch | 2.13.0+cpu |
+| paxml / praxis / lingvo | 1.4.0 / 1.4.0 / 0.12.7 |
+| numpy | 1.26.4 |
+
+Two of these are not incidental. `torch` is CPU-only and installed *outside* the `[torch]`
+extra, because timesfm 1.2.9 marks that extra `python_version == "3.11"` while `[pax]`
+requires exactly `3.10` - so `pip install "timesfm[pax,torch]"` resolves, exits 0, and
+installs only one of the two runtimes. And both runtimes ran with `--backend cpu`, so
+neither number depends on a GPU being present.
+
+To regenerate after any change to the image:
+
+```
+docker run --rm --entrypoint python tsfm-timesfm-jax -c '...'  > artifacts/timesfm_runtime_versions.json
+```
+
+The exact command is in the commit that introduced the file. If the file and the image ever
+disagree, the results in `artifacts/` belong to whichever configuration produced them - so
+regenerate and re-run rather than editing the record.
