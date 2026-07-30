@@ -162,6 +162,29 @@ itself, which is what a tolerance has to be measured from.
 Every downstream number is worthless if the harness disagrees with the literature on the
 literature's own turf. A confirmed failure to reproduce is itself a reportable finding.
 
+### Harness validation status
+
+Each model checked against a published number on GIFT-Eval `ett1/H/short`, since that is the
+one benchmark where all four have published per-task results under a single protocol.
+
+| Model | Ours | Published | Deviation | |
+|---|---|---|---|---|
+| TimesFM-200m | 0.9386 | 0.9380 | **+0.07%** | ✓ |
+| Moirai-base | 0.8840 | 0.8850 | **-0.11%** | ✓ (vs 1.1-R-base, the scored checkpoint) |
+| Chronos-base | 0.8306 | 0.8400 | **-1.12%** | ✓ (also exact on the Chronos benchmark) |
+| Lag-Llama | see below | 0.9875 | — | ⚠ blocked |
+
+**Lag-Llama cannot be validated this way.** GIFT-Eval published its score but not the
+configuration behind it - its entry declares `replication_code_available: No` and, alone
+among the four, it has no notebook. Context length is an explicit tunable that moves the
+score, so a mismatch cannot distinguish our harness from their unstated setting. The
+model-card sweep gives -6.28% at context 32 and -3.64% at 64, rising toward the published
+figure; 128 and above are unrun. If none land on it, that is a reportable reproducibility
+failure rather than a bug we can locate.
+
+TimesFM's number comes from the PyTorch port, which was first shown equivalent to the
+audited JAX checkpoint to seven significant figures - see *TimesFM checkpoint equivalence*.
+
 ### Context length: done, and it corrected the segmentation rule
 
 Read from the pinned checkpoints rather than assumed:
