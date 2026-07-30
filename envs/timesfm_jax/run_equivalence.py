@@ -89,6 +89,9 @@ def main() -> int:
     )
     parser.add_argument("--batch-size", type=int, default=8)
     parser.add_argument("--backend", default="gpu", choices=["gpu", "cpu"])
+    # Output naming, so a later run cannot silently overwrite the equivalence
+    # artifacts that a passing result already rests on.
+    parser.add_argument("--out-prefix", default="timesfm_forecasts")
     args = parser.parse_args()
 
     import timesfm
@@ -103,7 +106,7 @@ def main() -> int:
     for runtime in args.runtimes:
         print(f"\n=== {runtime} ({repos[runtime]}) ===")
         forecast = run_one(timesfm, runtime, contexts, horizon, args.backend, args.batch_size)
-        out = artifacts / f"timesfm_forecasts_{runtime}.npz"
+        out = artifacts / f"{args.out_prefix}_{runtime}.npz"
         np.savez(out, point_forecast=forecast)
         meta = {
             "runtime": runtime,

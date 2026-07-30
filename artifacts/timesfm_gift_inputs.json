@@ -1,0 +1,9 @@
+{
+  "task": "ett1/H/short",
+  "n_windows": 140,
+  "context_len": 512,
+  "horizon": 48,
+  "freq": "H",
+  "seasonality": 24,
+  "contexts_sha256": "135f035488aa5df7c3c82038f8ee34884bc5c930ed9c1f38e80ee5634cf61c96"
+}
