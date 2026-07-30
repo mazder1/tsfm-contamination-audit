@@ -58,6 +58,41 @@ with a difference between two operating systems and two CUDA stacks.
 It also means **TimesFM runs in this container for the whole audit**, not just for this
 test, which is one of the costs already accepted under *One environment per model stack*.
 
+## Round 2: validating the harness against a published number
+
+Equivalence was the prerequisite, not the validation. TimesFM still has to reproduce a
+published GIFT-Eval score the way Chronos (-1.12%) and Moirai (-0.11%) did. Same
+artifact-exchange pattern, so the container stays dumb.
+
+Inputs are already frozen and committed: `artifacts/timesfm_gift_inputs.npz`, all 140
+windows of `ett1/H/short`, contexts hashed `135f0354...`.
+
+```
+docker run --rm --gpus all -v "$PWD/artifacts:/artifacts" tsfm-timesfm-jax \
+    --inputs timesfm_gift_inputs.npz \
+    --out-prefix timesfm_gift_forecasts \
+    --runtimes pytorch \
+    --backend cpu
+```
+
+Then on the host:
+
+```
+uv run python scripts/timesfm_score_gift.py
+```
+
+Notes:
+
+- `--out-prefix` is required. Without it the run would overwrite
+  `timesfm_forecasts_*.npz`, which a passing equivalence result rests on.
+- `--runtimes pytorch` alone is enough now that the two are proven equivalent. Run both if
+  you want the JAX number for the record; it costs another pass.
+- 140 windows rather than 20, so expect roughly seven times the equivalence run's duration.
+- The MASE denominators travel inside the frozen file, computed from each window's **full**
+  history rather than the 512-point context the model sees. Chronos and Moirai were scored
+  that way, and recomputing from the truncated context here would change what MASE means and
+  quietly break the cross-model comparison.
+
 ### Why Python 3.10
 
 `timesfm`'s PAX extra pins `paxml` and `lingvo` to `python_version == "3.10"` exactly. The

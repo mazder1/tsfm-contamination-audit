@@ -46,18 +46,30 @@ def hparams(timesfm, horizon: int, backend: str, batch_size: int):
     )
 
 
+def runtime_class(runtime: str):
+    """Resolve a runtime to its implementation class.
+
+    timesfm 1.2.9's __init__ exposes exactly one class, named TimesFm, chosen by
+    a try/except: TimesFmJax if jax imports, else TimesFmTorch. There is no
+    top-level TimesFmTorch to reach, so both sides are imported from their own
+    modules instead. Same package, same version - only the entry point differs.
+    """
+    if runtime == "jax":
+        from timesfm.timesfm_jax import TimesFmJax
+
+        return TimesFmJax
+    from timesfm.timesfm_torch import TimesFmTorch
+
+    return TimesFmTorch
+
+
 def run_one(timesfm, runtime: str, contexts, horizon, backend, batch_size):
     """Forecast the frozen contexts through one runtime. Returns point forecasts."""
-    if runtime == "jax":
-        model = timesfm.TimesFm(
-            hparams=hparams(timesfm, horizon, backend, batch_size),
-            checkpoint=timesfm.TimesFmCheckpoint(huggingface_repo_id=JAX_REPO),
-        )
-    else:
-        model = timesfm.TimesFmTorch(
-            hparams=hparams(timesfm, horizon, backend, batch_size),
-            checkpoint=timesfm.TimesFmCheckpoint(huggingface_repo_id=PYTORCH_REPO),
-        )
+    repo = JAX_REPO if runtime == "jax" else PYTORCH_REPO
+    model = runtime_class(runtime)(
+        hparams=hparams(timesfm, horizon, backend, batch_size),
+        checkpoint=timesfm.TimesFmCheckpoint(huggingface_repo_id=repo),
+    )
     point_forecast, _ = model.forecast(
         [contexts[i] for i in range(len(contexts))],
         freq=[0] * len(contexts),
@@ -77,6 +89,9 @@ def main() -> int:
     )
     parser.add_argument("--batch-size", type=int, default=8)
     parser.add_argument("--backend", default="gpu", choices=["gpu", "cpu"])
+    # Output naming, so a later run cannot silently overwrite the equivalence
+    # artifacts that a passing result already rests on.
+    parser.add_argument("--out-prefix", default="timesfm_forecasts")
     args = parser.parse_args()
 
     import timesfm
@@ -91,7 +106,7 @@ def main() -> int:
     for runtime in args.runtimes:
         print(f"\n=== {runtime} ({repos[runtime]}) ===")
         forecast = run_one(timesfm, runtime, contexts, horizon, args.backend, args.batch_size)
-        out = artifacts / f"timesfm_forecasts_{runtime}.npz"
+        out = artifacts / f"{args.out_prefix}_{runtime}.npz"
         np.savez(out, point_forecast=forecast)
         meta = {
             "runtime": runtime,

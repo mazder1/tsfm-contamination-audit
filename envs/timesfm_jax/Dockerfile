@@ -23,10 +23,11 @@ ENV DEBIAN_FRONTEND=noninteractive \
 # Python 3.10 specifically. timesfm's PAX extra pins paxml and lingvo to
 # python_version == "3.10", so 3.11 - the version the rest of this project uses -
 # silently drops the PAX backend and leaves nothing to compare against.
+#
+# 22.04 ships 3.10 as its system python3, so this comes from the distro repos.
+# An earlier revision added the deadsnakes PPA for it; that bought nothing and
+# introduced a network/GPG failure mode on every build.
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        software-properties-common \
-    && add-apt-repository -y ppa:deadsnakes/ppa \
-    && apt-get update && apt-get install -y --no-install-recommends \
         python3.10 python3.10-venv python3.10-dev python3-pip git \
     && rm -rf /var/lib/apt/lists/*
 
@@ -40,6 +41,26 @@ ENV PATH=/venv/bin:$PATH
 # host-side PyTorch environment to compare from.
 RUN pip install --no-cache-dir --upgrade pip \
     && pip install --no-cache-dir "numpy>=1.26,<2.0" "timesfm[pax,torch]==1.2.9"
+
+# timesfm 1.2.9 declares its two extras with mutually exclusive Python pins:
+#
+#   paxml, lingvo  ; python_version == "3.10"  and extra == "pax"
+#   torch[cuda]    ; python_version == "3.11"  and extra == "torch"
+#
+# So [pax,torch] can never satisfy both, and pip exits 0 having silently
+# installed only one side. On 3.10 - required above for PAX - torch is dropped,
+# which is why it is installed explicitly here. Same timesfm, same Python, both
+# runtimes; only the marker is bypassed, and torch itself supports 3.10 fine.
+#
+# CPU build deliberately. torch's current CUDA wheels carry a full CUDA 12 stack
+# of their own, and run_equivalence.py loads both runtimes in one process, so a
+# CUDA torch would put two CUDA runtimes in one address space; the cu12-pinned
+# older torches instead force jax's nvidia-cudnn-cu12 down from 8.9.7.29 to
+# 8.9.2.26, changing the cuDNN *both* backends run on. Either way the test would
+# risk measuring a CUDA-stack difference rather than the JAX/PyTorch port
+# difference it exists to measure. Run both sides with --backend cpu.
+RUN pip install --no-cache-dir --index-url https://download.pytorch.org/whl/cpu \
+        "torch>=2.0.0"
 
 WORKDIR /work
 COPY run_equivalence.py /work/run_equivalence.py

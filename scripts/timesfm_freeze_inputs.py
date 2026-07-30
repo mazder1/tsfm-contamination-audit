@@ -23,6 +23,7 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
+from tsfm_audit.analysis.metrics import get_seasonality, seasonal_error  # noqa: E402
 from tsfm_audit.benchmark import gift  # noqa: E402
 
 # TimesFM 1.0's architectural context cap.
@@ -42,18 +43,35 @@ def main() -> int:
     step = max(1, len(windows) // args.n)
     chosen = windows[::step][: args.n]
 
+    freq = chosen[0].freq
+    season = get_seasonality(freq)
+
     contexts = np.zeros((len(chosen), CONTEXT_LEN), dtype=np.float32)
     targets = np.zeros((len(chosen), horizon), dtype=np.float32)
+    # MASE's denominator, computed from each window's FULL history rather than
+    # the truncated context. TimesFM only ever sees the last 512 points, but the
+    # metric does not: Chronos and Moirai were scored against the full past, and
+    # silently switching to a 512-point denominator here would change what MASE
+    # means and make the cross-model comparison invalid.
+    denominators = np.zeros(len(chosen), dtype=np.float64)
+
     for i, window in enumerate(chosen):
         past = np.asarray(window.past, dtype=np.float32)[-CONTEXT_LEN:]
         if len(past) < CONTEXT_LEN:
             raise SystemExit(f"window {i} has only {len(past)} points; need {CONTEXT_LEN}")
         contexts[i] = past
         targets[i] = np.asarray(window.target, dtype=np.float32)[:horizon]
+        denominators[i] = seasonal_error(np.asarray(window.past, dtype=np.float64), season)
 
     out = Path(__file__).resolve().parents[1] / "artifacts" / args.out
     out.parent.mkdir(parents=True, exist_ok=True)
-    np.savez(out, contexts=contexts, targets=targets, horizon=np.int64(horizon))
+    np.savez(
+        out,
+        contexts=contexts,
+        targets=targets,
+        horizon=np.int64(horizon),
+        seasonal_error=denominators,
+    )
 
     digest = hashlib.sha256(contexts.tobytes()).hexdigest()
     meta = {
@@ -61,6 +79,8 @@ def main() -> int:
         "n_windows": len(chosen),
         "context_len": CONTEXT_LEN,
         "horizon": int(horizon),
+        "freq": freq,
+        "seasonality": season,
         "contexts_sha256": digest,
     }
     out.with_suffix(".json").write_text(json.dumps(meta, indent=2), encoding="utf-8")
