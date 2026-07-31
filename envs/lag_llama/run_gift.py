@@ -80,11 +80,32 @@ def score_context(
     context_length: int,
     batch_size: int,
     device: str,
+    no_rope_scaling: bool = False,
 ) -> tuple[float, float]:
     from lag_llama.gluon.estimator import LagLlamaEstimator
 
     checkpoint = torch.load(ckpt_path, map_location=device, weights_only=False)
     kwargs = checkpoint["hyper_parameters"]["model_kwargs"]
+
+    # RoPE scaling. The model was trained at context 32 (kwargs["context_length"]),
+    # and its rotary position embeddings are only meaningful over that range. The
+    # model card is explicit: "enable RoPE scaling for the model to work well with
+    # context lengths larger than what it was trained on."
+    #
+    # Leaving it None does not error or truncate - the embeddings simply
+    # extrapolate past their trained range and the model degrades silently. Our
+    # first sweep did exactly that at contexts 64 through 512, which is why its
+    # curve was erratic rather than smooth.
+    #
+    # Linear scaling with factor (context + horizon) / trained_context, following
+    # the authors' own zero-shot demo.
+    trained_context = kwargs["context_length"]
+    scaling_factor = max(1.0, (context_length + horizon) / trained_context)
+    rope_scaling = (
+        None
+        if (no_rope_scaling or scaling_factor <= 1.0)
+        else {"type": "linear", "factor": scaling_factor}
+    )
 
     estimator = LagLlamaEstimator(
         ckpt_path=str(ckpt_path),
@@ -96,6 +117,7 @@ def score_context(
         n_head=kwargs["n_head"],
         scaling=kwargs["scaling"],
         time_feat=kwargs["time_feat"],
+        rope_scaling=rope_scaling,
         batch_size=batch_size,
         num_parallel_samples=NUM_SAMPLES,
         device=torch.device(device),
@@ -121,6 +143,8 @@ def main() -> int:
     parser.add_argument("--contexts", nargs="*", type=int, default=list(CANDIDATE_CONTEXTS))
     parser.add_argument("--batch-size", type=int, default=32)
     parser.add_argument("--out", default="lag_llama_context_sweep.csv")
+    # Kept only so the broken first sweep stays reproducible for comparison.
+    parser.add_argument("--no-rope-scaling", action="store_true")
     args = parser.parse_args()
 
     out = REPO_ROOT / "artifacts" / args.out
@@ -151,6 +175,7 @@ def main() -> int:
                 context_length,
                 args.batch_size,
                 device,
+                no_rope_scaling=args.no_rope_scaling,
             )
         except Exception as exc:  # noqa: BLE001
             print(f"  context {context_length:<5} FAILED: {type(exc).__name__}: {exc}")
@@ -164,6 +189,7 @@ def main() -> int:
                 "ref_MASE": ref,
                 "d_MASE_%": dev,
                 "n_instances": len(windows),
+                "rope_scaling": not args.no_rope_scaling,
                 "device": device,
                 "secs": round(elapsed, 1),
             }

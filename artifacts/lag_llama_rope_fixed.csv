@@ -1,0 +1,2 @@
+task,context_length,MASE,ref_MASE,d_MASE_%,n_instances,rope_scaling,device,secs
+ett1/H/short,64,0.9272020198119832,0.9874780774116516,-6.104040077290849,140,True,cuda,413.5
