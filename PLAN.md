@@ -194,21 +194,40 @@ All five recommended values were run, against a published 0.9875:
 
 **The sweep does not identify their setting.** The two closest results sit at opposite ends
 of the recommended range, and the curve is not monotonic - it climbs through 256 then falls
-at 512. A smooth dependence on context length would not do that.
+at 512.
 
-The likely explanation is sampling noise: Lag-Llama draws 100 trajectories per forecast, and
-a 4.3% swing between adjacent settings is what large variance looks like. **That noise has
-not been measured for this model**, only for Chronos, so this remains a hypothesis and is
-recorded as one. Measuring it - five seeds at a fixed context - is outstanding work.
+#### A defect in our own harness, found before blaming theirs
 
-What the sweep does establish is that our harness *brackets* the published number across the
-authors' own recommended settings. That is weak evidence the code is sound: far weaker than
-Moirai's -0.11% or TimesFM's +0.07%, but not a failure.
+That table was produced with a bug. Lag-Llama was trained at context **32**, a value the
+checkpoint carries in `model_kwargs`, and its model card states plainly: *enable RoPE scaling
+for the model to work well with context lengths larger than what it was trained on*.
+`rope_scaling` defaults to `None`, and we never set it. Every row above 32 therefore ran the
+model outside its trained positional range with no correction - 16x beyond it at context 512.
 
-**The obstacle is theirs, not ours.** A benchmark score published without the configuration
-behind it cannot be reproduced by anyone, and that is worth reporting as a finding rather
-than filed as our limitation. It is also the sharpest possible illustration of this
-project's premise: a widely-cited number that no reader can check.
+The failure mode is silent by design. The module raises no error and truncates nothing; the
+rotary embeddings simply extrapolate and accuracy degrades without warning. That is a far
+better explanation for the erratic curve than the sampling noise first hypothesised here,
+because positional extrapolation is systematic rather than variance - and it means a
+noise-measurement exercise would have measured the wrong thing.
+
+**Correcting it does not rescue the published number.** At context 64, scaled gives 0.9272
+against 0.9515 unscaled - moving *further* from the published 0.9875, not closer. The
+implication is that GIFT-Eval ran with library defaults, unscaled, as we originally did.
+
+#### What the finding actually is
+
+There are **at least two** unstated settings behind that published score - context length and
+RoPE scaling - and they interact. One of them alone swings the result by 2.6%. Recovering
+their number would require knowing both, and neither was published.
+
+So the finding survives, and is sharper than first written: the configuration space behind
+that score is larger than a single dial, and none of it is public. A benchmark number that
+no reader can reproduce from published information is worth reporting as a finding rather
+than filed as our limitation - it is this project's premise in miniature.
+
+Stated honestly, though: we reached that conclusion only after finding a real bug on our own
+side first, and the earlier version of this section attributed the problem outward before
+that check had been done.
 
 TimesFM's number comes from the PyTorch port, which was first shown equivalent to the
 audited JAX checkpoint to seven significant figures - see *TimesFM checkpoint equivalence*.

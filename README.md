@@ -303,15 +303,24 @@ Three of the four audited models reproduce their published GIFT-Eval scores clos
 TimesFM +0.07%, Moirai -0.11%, Chronos -1.12%. The fourth cannot be checked at all.
 
 Lag-Llama's benchmark entry publishes a score but not the configuration that produced it -
-no replication notebook, and the entry says so itself. Its context length is an explicit
-tunable that moves the score, so a mismatch cannot distinguish a broken harness from a
-different setting. Running all five values its own model card recommends produces MASE from
-0.9730 to 1.0152 against a published 0.9875, with the two closest at opposite ends of the
-range and no monotonic trend.
+no replication notebook, and the entry says so itself. Running all five context lengths its
+own model card recommends produces MASE from 0.9730 to 1.0152 against a published 0.9875,
+with the two closest at opposite ends of the range and no monotonic trend.
 
-The number brackets, but it cannot be reproduced - by us or by anyone else. That is reported
-as a finding rather than filed as our limitation, and it is a compact illustration of why
-this project exists: a widely-cited result no reader can check.
+Investigating that produced a defect on **our** side first: Lag-Llama trains at context 32
+and its card requires RoPE scaling beyond that, which we had left at its default of `None`.
+The model neither errors nor truncates in that state - it extrapolates its positional
+embeddings and degrades silently. Correcting it moves results *further* from the published
+figure, which suggests the benchmark also ran unscaled.
+
+So there are at least two unstated settings behind that score, and they interact: one alone
+swings the result by 2.6%. The number cannot be reproduced from published information - by
+us or by anyone else. That is reported as a finding rather than filed as our limitation, and
+it is a compact illustration of why this project exists: a widely-cited result no reader can
+check.
+
+The order matters and is recorded as it happened - the bug in our harness was found before
+the conclusion about theirs was reached, not after.
 
 Full detail in [`PLAN.md`](PLAN.md) under *Harness validation status*.
 
