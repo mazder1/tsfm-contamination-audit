@@ -172,15 +172,43 @@ one benchmark where all four have published per-task results under a single prot
 | TimesFM-200m | 0.9386 | 0.9380 | **+0.07%** | ✓ |
 | Moirai-base | 0.8840 | 0.8850 | **-0.11%** | ✓ (vs 1.1-R-base, the scored checkpoint) |
 | Chronos-base | 0.8306 | 0.8400 | **-1.12%** | ✓ (also exact on the Chronos benchmark) |
-| Lag-Llama | see below | 0.9875 | — | ⚠ blocked |
+| Lag-Llama | 0.9730-1.0152 | 0.9875 | brackets it | ⚠ not identifiable — see below |
 
-**Lag-Llama cannot be validated this way.** GIFT-Eval published its score but not the
-configuration behind it - its entry declares `replication_code_available: No` and, alone
-among the four, it has no notebook. Context length is an explicit tunable that moves the
-score, so a mismatch cannot distinguish our harness from their unstated setting. The
-model-card sweep gives -6.28% at context 32 and -3.64% at 64, rising toward the published
-figure; 128 and above are unrun. If none land on it, that is a reportable reproducibility
-failure rather than a bug we can locate.
+#### Lag-Llama: the configuration behind the published number cannot be recovered
+
+GIFT-Eval published a Lag-Llama score but not the configuration that produced it. Its entry
+declares `replication_code_available: No` and, alone among the four models, it ships no
+notebook. Context length is an explicit tunable - the model card recommends trying 32, 64,
+128, 256, 512 - and it moves the score, so no single run can separate our harness from their
+unstated setting.
+
+All five recommended values were run, against a published 0.9875:
+
+| Context | Our MASE | Deviation |
+|---|---|---|
+| 32 | 0.9255 | -6.28% |
+| 64 | 0.9515 | -3.64% |
+| 128 | 1.0045 | **+1.73%** |
+| 256 | 1.0152 | +2.80% |
+| 512 | 0.9730 | **-1.47%** |
+
+**The sweep does not identify their setting.** The two closest results sit at opposite ends
+of the recommended range, and the curve is not monotonic - it climbs through 256 then falls
+at 512. A smooth dependence on context length would not do that.
+
+The likely explanation is sampling noise: Lag-Llama draws 100 trajectories per forecast, and
+a 4.3% swing between adjacent settings is what large variance looks like. **That noise has
+not been measured for this model**, only for Chronos, so this remains a hypothesis and is
+recorded as one. Measuring it - five seeds at a fixed context - is outstanding work.
+
+What the sweep does establish is that our harness *brackets* the published number across the
+authors' own recommended settings. That is weak evidence the code is sound: far weaker than
+Moirai's -0.11% or TimesFM's +0.07%, but not a failure.
+
+**The obstacle is theirs, not ours.** A benchmark score published without the configuration
+behind it cannot be reproduced by anyone, and that is worth reporting as a finding rather
+than filed as our limitation. It is also the sharpest possible illustration of this
+project's premise: a widely-cited number that no reader can check.
 
 TimesFM's number comes from the PyTorch port, which was first shown equivalent to the
 audited JAX checkpoint to seven significant figures - see *TimesFM checkpoint equivalence*.
