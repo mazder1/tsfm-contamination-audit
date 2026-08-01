@@ -226,9 +226,33 @@ Incidentally, the larger batch was 3.5x *slower*: 256 windows times 100 sampled 
 overwhelms an 8GB card, and torch here falls back to a memory-hungry attention path. Batch
 tuning is not a route to shortening these runs.
 
-**Correcting it does not rescue the published number.** At context 64, scaled gives 0.9272
-against 0.9515 unscaled - moving *further* from the published 0.9875, not closer. The
-implication is that GIFT-Eval ran with library defaults, unscaled, as we originally did.
+**Correcting it does not rescue the published number**, but it matters a great deal for the
+audit. At context 512 - the value Phase 5 will use, and 16x the trained context - scaled
+gives 0.9305 against 0.9730 unscaled, a **4.4% swing**. Every Lag-Llama forecast in the real
+sweep would have carried that error.
+
+| Context | Unscaled | Scaled |
+|---|---|---|
+| 32 | 0.9255 | 0.9115 |
+| 64 | 0.9515 | 0.9283 |
+| 128 | 1.0045 | - |
+| 256 | 1.0152 | - |
+| 512 | 0.9730 | 0.9305 |
+
+The scaled column sits in a tight 0.911-0.931 band where the unscaled one swings across
+0.93-1.02. On three points that is suggestive rather than conclusive, but it is consistent
+with the erratic curve being broken positional encoding rather than model behaviour - which
+is what the noise measurement independently indicated.
+
+Scaling moves *further* from the published 0.9875 at every context tested, so GIFT-Eval
+almost certainly ran with library defaults, unscaled, as we originally did.
+
+**Batch size is a memory cliff, not a throughput dial.** The scaled 512 run first died
+silently, then hung for an hour at 100% GPU utilisation with 157 MiB of 8192 free - Windows
+spills VRAM to host memory rather than failing, so an out-of-memory condition presents as
+extreme slowness. Dropping from batch 32 to batch 4 completed the same run in 21 minutes
+against 2.7 hours, 7.8x faster from *less* parallelism. Torch here also falls back to a
+memory-hungry attention path, since it was not compiled with flash attention.
 
 #### What the finding actually is
 
