@@ -451,6 +451,36 @@ accept. Corrected before any model was scored.
 
 **3. Pure noise.** No structure to memorize, so nothing may fire.
 
+**4. Gap stability under harness perturbation.** The other three tests ask whether the probe
+fires where it should not. This one asks a different question: whether the probe's output is
+stable under *our own* implementation choices.
+
+The design rests on an argument that has been asserted here rather than measured. The probe
+compares a model against itself - same weights, same harness, real series versus surrogate -
+so the reasoning goes that any systematic quirk in our pipeline applies to both sides and
+cancels in the subtraction. That is why our absolute scores need not match anyone's
+published number for the gap to mean something.
+
+It is a reasonable argument. It is not evidence, and this project does not get to rely on
+unmeasured reasoning while accusing others of exactly that.
+
+**The test.** Run the probe under two harness configurations that shift the absolute level
+without changing the method - batch size, which alters the sampling RNG stream, and dtype,
+float32 against bfloat16. Compare the *gaps*, not the levels. A natural perturbation is
+already measured: batch size moved Lag-Llama's level by 0.24%.
+
+**Criterion, fixed before running:** the real-versus-surrogate gap must agree between
+configurations to within the level shift those configurations produce. If the level moves
+0.24% and the gap moves 0.24% or less, cancellation holds. If the gap moves substantially
+more than the level, it does not.
+
+**If it fails, the probe design is wrong**, not merely imprecise, and that has to surface
+before Phase 5 rather than after a sweep has produced findings that cannot be trusted.
+
+**Credit:** added after review pointed out that cancellation was being assumed rather than
+demonstrated - the same objection that produced this phase in the first place, applied to
+the phase itself.
+
 #### Decided: unequal power across domains is accepted and reported ✓
 
 A uniform context of 512 observations leaves the hourly series ~13,000 forecast origins and
@@ -467,8 +497,13 @@ evidence, not an acquittal, and must be reported as such.
 visible in the data rather than only in prose. Decided before any model was scored.
 
 **Gate — hard stop:** the measured gap must be statistically indistinguishable from zero in
-all three, at the same FDR level used for the real sweep. Any firing means the surrogate is
-broken; fix it and re-run before Phase 4.
+tests 1-3, at the same FDR level used for the real sweep, **and** must satisfy the stability
+criterion in test 4. Any firing means the surrogate is broken; instability means the probe
+is. Either way, fix it and re-run before Phase 4.
+
+The two failure modes are independent. A probe can be silent where it should be silent and
+still produce a gap that swings with an arbitrary implementation choice, and such a probe
+would pass tests 1-3 while being worthless.
 
 **Credit:** this phase was added after review pointed out that the original design assumed
 what the models use rather than testing it.

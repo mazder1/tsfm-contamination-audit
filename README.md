@@ -134,6 +134,14 @@ and a test asserts that.
   load is the null control for the Electricity/ETT benchmarks, which is why the ENTSO-E
   source is load-bearing rather than optional.
 
+- **Gap stability under harness perturbation.** The probe compares a model against itself, so
+  systematic quirks in our pipeline should cancel in the subtraction - which is why our
+  absolute scores need not match anyone's published number. That is an argument, not a
+  measurement, so it is tested: the real-versus-surrogate gap must agree between harness
+  configurations that shift the absolute level (batch size, dtype) to within the level shift
+  they produce. A gap that moves with an arbitrary implementation choice is not measuring
+  memorisation, and a probe can pass every silence test above while failing this one.
+
 - **Negative control** fires on **< 5 %** of series. A probe that fires where contamination
   is impossible is broken, and every positive result it produced is worthless.
 - **Positive control** (Phase 4's deliberately contaminated model) fires on series it was
