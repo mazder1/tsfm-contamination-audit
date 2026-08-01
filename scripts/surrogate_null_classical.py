@@ -43,15 +43,21 @@ def fit_and_score(values: np.ndarray, season: int, model_name: str) -> float:
 
     The model is trained fresh on each series it sees - which is the point.
     """
-    from statsforecast.models import AutoARIMA, AutoETS
+    from statsforecast.models import AutoARIMA, AutoETS, AutoRegressive, AutoTheta
 
     past, target = values[:-HORIZON], values[-HORIZON:]
     season_arg = max(1, season)
-    model = (
-        AutoARIMA(season_length=season_arg)
-        if model_name == "arima"
-        else AutoETS(season_length=season_arg)
-    )
+    # "ar" is the purest linear forecaster available: ordinary autoregression on
+    # lags up to one season, nothing else. It consumes exactly the structure
+    # IAAFT preserves (the autocorrelations), so it is the cleanest test of
+    # whether the sign of the IAAFT gap indexes linearity.
+    models = {
+        "arima": lambda: AutoARIMA(season_length=season_arg),
+        "ets": lambda: AutoETS(season_length=season_arg),
+        "theta": lambda: AutoTheta(season_length=season_arg),
+        "ar": lambda: AutoRegressive(lags=list(range(1, season_arg + 1))),
+    }
+    model = models[model_name]()
     fitted = model.fit(y=past.astype(np.float64))
     forecast = fitted.predict(h=HORIZON)["mean"]
     return mase(target, np.asarray(forecast, dtype=float), past, season)
