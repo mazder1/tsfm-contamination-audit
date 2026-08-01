@@ -81,6 +81,7 @@ def score_context(
     batch_size: int,
     device: str,
     no_rope_scaling: bool = False,
+    progress_every: int = 10,
 ) -> tuple[float, float]:
     from lag_llama.gluon.estimator import LagLlamaEstimator
 
@@ -128,12 +129,41 @@ def score_context(
 
     dataset = build_gluonts_dataset(windows, freq)
     started = time.time()
-    forecasts = list(predictor.predict(dataset, num_samples=NUM_SAMPLES))
 
-    scores = []
-    for window, forecast in zip(windows, forecasts, strict=True):
-        median = np.quantile(np.asarray(forecast.samples, dtype=float), 0.5, axis=0)
-        scores.append(mase(window.target, median[:horizon], window.past, season))
+    # Consumed window by window rather than materialised with list(). A silent
+    # death at context 512 left no output and no file, and there was no way to
+    # tell whether it failed at window 3 or window 138. Progress is printed as it
+    # goes and partial scores are kept, so the next failure is diagnosable and a
+    # late one still yields most of the data.
+    scores: list[float] = []
+    try:
+        for i, (window, forecast) in enumerate(
+            zip(windows, predictor.predict(dataset, num_samples=NUM_SAMPLES), strict=False), 1
+        ):
+            median = np.quantile(np.asarray(forecast.samples, dtype=float), 0.5, axis=0)
+            scores.append(mase(window.target, median[:horizon], window.past, season))
+            if i % progress_every == 0 or i == len(windows):
+                elapsed = time.time() - started
+                rate = elapsed / i
+                print(
+                    f"      {i}/{len(windows)} windows  {elapsed:.0f}s elapsed  "
+                    f"{rate:.1f}s/window  eta {(len(windows) - i) * rate:.0f}s",
+                    flush=True,
+                )
+    except Exception as exc:  # noqa: BLE001 - a partial result still localises the failure
+        print(
+            f"      FAILED after {len(scores)}/{len(windows)} windows: {type(exc).__name__}: {exc}",
+            flush=True,
+        )
+        if not scores:
+            raise
+
+    if len(scores) < len(windows):
+        print(
+            f"      partial: scoring {len(scores)} of {len(windows)} windows - "
+            "this MASE is NOT comparable to a complete run",
+            flush=True,
+        )
     return float(np.nanmean(scores)), time.time() - started
 
 
@@ -145,6 +175,7 @@ def main() -> int:
     parser.add_argument("--out", default="lag_llama_context_sweep.csv")
     # Kept only so the broken first sweep stays reproducible for comparison.
     parser.add_argument("--no-rope-scaling", action="store_true")
+    parser.add_argument("--progress-every", type=int, default=10)
     args = parser.parse_args()
 
     out = REPO_ROOT / "artifacts" / args.out
@@ -176,6 +207,7 @@ def main() -> int:
                 args.batch_size,
                 device,
                 no_rope_scaling=args.no_rope_scaling,
+                progress_every=args.progress_every,
             )
         except Exception as exc:  # noqa: BLE001
             print(f"  context {context_length:<5} FAILED: {type(exc).__name__}: {exc}")
