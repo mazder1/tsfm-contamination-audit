@@ -235,14 +235,20 @@ sweep would have carried that error.
 |---|---|---|
 | 32 | 0.9255 | 0.9115 |
 | 64 | 0.9515 | 0.9283 |
-| 128 | 1.0045 | - |
-| 256 | 1.0152 | - |
+| 128 | 1.0045 | 0.9322 |
+| 256 | 1.0152 | 0.9446 |
 | 512 | 0.9730 | 0.9305 |
 
-The scaled column sits in a tight 0.911-0.931 band where the unscaled one swings across
-0.93-1.02. On three points that is suggestive rather than conclusive, but it is consistent
-with the erratic curve being broken positional encoding rather than model behaviour - which
-is what the noise measurement independently indicated.
+Scaling narrows the spread from 9.7% to 3.6% - about 2.7x tighter, not the order of
+magnitude claimed here when only three scaled points existed.
+
+**It does not make the curve monotonic.** Scaled 512 sits 1.5% below scaled 256, six times
+the measured sampling noise of 0.24%, so that dip is real rather than variance. RoPE scaling
+substantially reduces the erratic dependence on context length without eliminating it, and
+why that remains is unexplained.
+
+Both corrections came from running the middle contexts after the conclusion had already been
+drawn from the endpoints. The first pass revised the band; the second revised the shape.
 
 Scaling moves *further* from the published 0.9875 at every context tested, so GIFT-Eval
 almost certainly ran with library defaults, unscaled, as we originally did.
@@ -253,6 +259,18 @@ spills VRAM to host memory rather than failing, so an out-of-memory condition pr
 extreme slowness. Dropping from batch 32 to batch 4 completed the same run in 21 minutes
 against 2.7 hours, 7.8x faster from *less* parallelism. Torch here also falls back to a
 memory-hungry attention path, since it was not compiled with flash attention.
+
+**Available VRAM is not a constant, and the runs were never compared under equal conditions.**
+Context 256 appeared pathological - far slower than the larger context 512 at the same batch
+size - until the headroom was checked: 512 ran with 7269 MiB free, 256 with about 5000 MiB,
+the difference held by browser and desktop applications. At batch 1 with the memory freed,
+256 completed in 7 minutes at a steady 3.0 s/window. Nothing about the configuration was
+unusual; the comparison was uncontrolled.
+
+This is an operational lesson for Phase 5, which runs far more inference than this. Free
+VRAM on this machine varies by gigabytes with what is open, and exceeding it degrades
+silently rather than failing. A sweep runner should record free memory at startup, so a slow
+overnight run can be diagnosed afterwards instead of being written off as bad luck.
 
 #### What the finding actually is
 
