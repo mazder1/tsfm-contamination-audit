@@ -373,6 +373,43 @@ the probe is measuring the wrong thing.
 
 **Gate:** validation suite passes for both families.
 
+### Status: both families built; probe FAILS its null control ⚠
+
+A forecastability pilot (run early, at review's insistence, rather than waiting for Phase
+3.5) answered two questions on fresh 2025-26 data, where contamination is impossible by date
+and the true gap is known to be zero:
+
+1. **Are surrogates forecastable at all?** Yes. Every surrogate median lands in the same
+   range as real series. The method is not hopeless.
+2. **Does the probe stay silent where it must?** **No.** On fresh German electricity load,
+   Chronos scored 33-37% better on the real series than on its surrogates, under *both*
+   families - the exact pre-registered signature of memorisation, on data the model cannot
+   have seen.
+
+| Series (all fresh) | Real | IAAFT med. | Bootstrap med. | Reading |
+|---|---|---|---|---|
+| DE_LU electricity | 0.441 | 0.661 | 0.703 | False positive, both families |
+| Nairobi temperature | 0.943 | 1.077 | 0.647 | Families disagree in sign |
+| Wikipedia pageviews | 6.115 | 0.540 | 0.566 | Comparison meaningless |
+
+**Diagnosis.** Both families destroy calendar structure. Real electricity load has weekday/
+weekend rhythm carried in the values themselves; IAAFT scrambles calendar alignment and the
+bootstrap glues Sundays onto Wednesdays. A real series is legitimately easier to forecast
+than its surrogate, so the probe fires with no memorisation anywhere - on electricity, the
+audit's flagship domain. The bootstrap additionally errs the *other* way on smooth data,
+manufacturing artificially clean cycles that would mask real contamination. And on
+spike-dominated web traffic, one spike inside the target window makes the whole comparison
+noise.
+
+**Consequence: the surrogate families must be redesigned before Phase 4** - calendar-aware
+variants that preserve the weekly structure a legitimate forecaster uses (candidates:
+permuting whole weeks; IAAFT within day-of-week strata). This is a revision to
+pre-registered machinery and is recorded as such. The pilot then re-runs until the null
+control reads zero; nothing downstream means anything until it does.
+
+That this was caught by a 15-minute pilot on clean data - before a single audit number
+existed - is the pre-registration discipline working as designed, on ourselves first.
+
 ---
 
 ## Phase 3.5 — Null validation: does the surrogate preserve forecastability? ⭐

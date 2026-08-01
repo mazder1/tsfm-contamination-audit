@@ -305,6 +305,16 @@ sweep runs locally and its results are committed as artifacts.
 
 ---
 
+## Status warning: the probe currently fails its null control
+
+A forecastability pilot on fresh 2025-26 data - where contamination is impossible by date -
+shows Chronos scoring 33-37% better on real German electricity load than on its surrogates,
+under both families. That is the pre-registered signature of memorisation, produced where
+the true gap is provably zero. Cause: both surrogate families destroy weekly calendar
+structure that real load legitimately has. The families are being redesigned
+(calendar-aware variants), and no audit result exists or will be produced until the pilot
+reads zero on clean data. Details in [`PLAN.md`](PLAN.md) under Phase 3.
+
 ## A finding from Phase 1
 
 Three of the four audited models reproduce their published GIFT-Eval scores closely:
