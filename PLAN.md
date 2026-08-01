@@ -205,10 +205,26 @@ for the model to work well with context lengths larger than what it was trained 
 model outside its trained positional range with no correction - 16x beyond it at context 512.
 
 The failure mode is silent by design. The module raises no error and truncates nothing; the
-rotary embeddings simply extrapolate and accuracy degrades without warning. That is a far
-better explanation for the erratic curve than the sampling noise first hypothesised here,
-because positional extrapolation is systematic rather than variance - and it means a
-noise-measurement exercise would have measured the wrong thing.
+rotary embeddings simply extrapolate and accuracy degrades without warning.
+
+**Sampling noise is now excluded as the explanation, by measurement.** Two runs at context 64
+with RoPE scaling differ only in batch size - 32 versus 256 - which changes nothing about the
+method but does change the order in which random draws are consumed, making them two
+independent samples of the model's sampling variance:
+
+| Batch | MASE | Seconds |
+|---|---|---|
+| 32 | 0.9272 | 414 |
+| 256 | 0.9294 | 1451 |
+
+They differ by **0.24%**, against swings of up to **4.3%** across the context sweep. The
+noise is roughly twenty times too small to account for the erratic curve, so that curve is
+real model behaviour under positional extrapolation, not variance. The originally planned
+noise-measurement exercise is therefore closed - and it would have measured the wrong thing.
+
+Incidentally, the larger batch was 3.5x *slower*: 256 windows times 100 sampled trajectories
+overwhelms an 8GB card, and torch here falls back to a memory-hungry attention path. Batch
+tuning is not a route to shortening these runs.
 
 **Correcting it does not rescue the published number.** At context 64, scaled gives 0.9272
 against 0.9515 unscaled - moving *further* from the published 0.9875, not closer. The
@@ -228,6 +244,13 @@ than filed as our limitation - it is this project's premise in miniature.
 Stated honestly, though: we reached that conclusion only after finding a real bug on our own
 side first, and the earlier version of this section attributed the problem outward before
 that check had been done.
+
+**Outstanding.** One run at context 512 with RoPE scaling enabled - the configuration the
+audit will actually use, and the one where the correction should matter most, since 512 is
+16x the trained context against the 2x tested so far. It costs about 2.7 hours and there is
+no cheap way to shorten it. It is not needed to validate anything against the published
+number, which is settled as impossible; it is needed to know how the model behaves in the
+configuration Phase 5 will run it in.
 
 TimesFM's number comes from the PyTorch port, which was first shown equivalent to the
 audited JAX checkpoint to seven significant figures - see *TimesFM checkpoint equivalence*.
