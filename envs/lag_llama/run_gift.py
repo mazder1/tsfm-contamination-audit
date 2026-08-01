@@ -22,6 +22,7 @@ stated sweep rather than a search for a flattering match.
 from __future__ import annotations
 
 import argparse
+import gc
 import sys
 import time
 from pathlib import Path
@@ -164,7 +165,22 @@ def score_context(
             "this MASE is NOT comparable to a complete run",
             flush=True,
         )
-    return float(np.nanmean(scores)), time.time() - started
+
+    elapsed = time.time() - started
+
+    # Release the model before the next context builds another one. Without this
+    # each context leaves its model resident, GPU memory fills across a
+    # multi-context sweep, and the driver starts spilling VRAM to host memory -
+    # which on Windows presents as extreme slowness rather than an error. It is
+    # visible as a within-run slowdown (2.7 to 4.4 s/window) and then a
+    # next-context collapse (30 s/window, slower than a larger context run in a
+    # fresh process).
+    del predictor, module, estimator, checkpoint
+    gc.collect()
+    if device == "cuda":
+        torch.cuda.empty_cache()
+
+    return float(np.nanmean(scores)), elapsed
 
 
 def main() -> int:
@@ -226,9 +242,14 @@ def main() -> int:
                 "secs": round(elapsed, 1),
             }
         )
+        free_mb = None
+        if device == "cuda":
+            free_bytes, _ = torch.cuda.mem_get_info()
+            free_mb = free_bytes // (1024 * 1024)
         print(
             f"  context {context_length:<5} MASE={our_mase:.4f}  "
-            f"({dev:+.2f}% vs published)  {elapsed:.0f}s",
+            f"({dev:+.2f}% vs published)  {elapsed:.0f}s"
+            + (f"  gpu_free={free_mb}MiB" if free_mb is not None else ""),
             flush=True,
         )
         # Written after every context, not at the end. Two GPU runs have been
