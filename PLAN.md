@@ -392,6 +392,19 @@ and the true gap is known to be zero:
 | Nairobi temperature | 0.943 | 1.077 | 0.647 | Families disagree in sign |
 | Wikipedia pageviews | 6.115 | 0.540 | 0.566 | Comparison meaningless |
 
+**Confirmed by construction, not only by date.** The pilot above used Chronos, an audited
+model, so its innocence rested on the fresh data postdating the checkpoint - which in turn
+rests on trusting model cards about cutoffs. Review caught the gap: Phase 3.5's test 1, the
+forecaster with no training corpus, had been skipped. Run afterwards, seasonal naive - no
+weights, no training data, memorisation impossible by construction - fires on the same
+series in the same direction: +12.3% (IAAFT) and +13.3% (bootstrap) on DE_LU electricity.
+
+A formula that repeats last week's values beat its surrogates. The gap is therefore a
+property of the surrogates with no model memory anywhere in the loop, and roughly a third of
+Chronos's +33-37% gap appears even with zero capacity to memorise - the rest being the same
+defect amplified by a model better able to exploit the structure the surrogates destroy.
+Script: `scripts/surrogate_null_naive.py`.
+
 **Diagnosis.** Both families destroy calendar structure. Real electricity load has weekday/
 weekend rhythm carried in the values themselves; IAAFT scrambles calendar alignment and the
 bootstrap glues Sundays onto Wednesdays. A real series is legitimately easier to forecast
