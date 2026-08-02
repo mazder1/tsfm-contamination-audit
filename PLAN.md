@@ -626,7 +626,38 @@ them look as if they do.
 
 ---
 
-## Phase 6 — Near-duplicate search (scoped)
+## Phase 6 — Near-duplicate search (ACTIVE - pulled forward)
+
+Pulled ahead of the surrogate redesign: it needs no surrogates, and its output is the
+answer key any redesigned probe will be calibrated against.
+
+### Finding from the subset listing alone
+
+LOTSA's 170 subset names, read before downloading any content, already show that roughly 20
+of the 27 Chronos zero-shot benchmark datasets appear **by name** in Moirai's training
+corpus: m4_quarterly, m4_yearly, m5, m1 and m3 families, covid_deaths, fred_md, hospital,
+cif_2016, nn5, tourism, car_parts, australian_electricity_demand, traffic_hourly, weather.
+Several GIFT-Eval datasets likewise (LOOP_SEATTLE, SZ_TAXI, restaurant, hierarchical_sales,
+saugeenday). **ETT is absent by name** - so the declared overlaps serve as ground-truth
+positives for validating the matcher, and ETT becomes the undeclared-copy hunt through the
+energy-domain subsets.
+
+### Pre-registered match criteria (fixed before any data content was read)
+
+- **Normalization:** z-normalize both windows (mean 0, sd 1). Makes the match invariant to
+  unit changes and offsets, which is how a mirrored dataset most often differs.
+- **Window:** W = min(len(query), 256) points, slid across every candidate series.
+- **Match:** per-point z-normalized RMS distance <= 0.05 (equivalent to correlation
+  >= ~0.9988). Catches exact copies, rescalings, and numeric jitter.
+- **Near-miss band:** RMS in (0.05, 0.25] is reported for manual review, never auto-declared.
+- **Algorithm:** MASS (FFT-based sliding z-normalized distance), so a query costs
+  O(n log n) per candidate series rather than O(n·W).
+- **Verification gates before any real claim:** planted exact copy must fire; planted
+  rescaled+shifted copy must fire; unrelated series must not fire; and the matcher must
+  rediscover one declared overlap (a named Monash subset) before being pointed at anything
+  undeclared.
+
+## Phase 6 (original notes)
 
 **Goal:** direct evidence, where the corpus is actually inspectable.
 
