@@ -47,10 +47,18 @@ def forecast(model: str, past: np.ndarray, horizon: int, season: int) -> np.ndar
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--models", nargs="*", default=["naive", "ets", "theta"])
+    # Override the seasonality passed to the model FIT only. GIFT-Eval's
+    # published classical baselines appear to have been run with the
+    # statsforecast default of 1 (non-seasonal); passing 1 here reproduces that
+    # configuration. MASE scoring always uses the true seasonality regardless.
+    parser.add_argument("--season-length", type=int, default=None)
     args = parser.parse_args()
 
     windows, horizon = gift.load_task(TASK)
     season = get_seasonality(windows[0].freq)
+    fit_season = args.season_length if args.season_length else season
+    if fit_season != season:
+        print(f"fitting with season_length={fit_season} (true seasonality {season})", flush=True)
     print(f"{TASK}: {len(windows)} windows, horizon {horizon}", flush=True)
 
     out = Path(__file__).resolve().parents[1] / "artifacts" / "anchor_validation.csv"
@@ -59,7 +67,9 @@ def main() -> int:
         scores = []
         for w in windows:
             past = w.past[-2048:]  # bound ARIMA cost; plenty for classical fits
-            scores.append(mase(w.target, forecast(model, past, horizon, season), w.past, season))
+            scores.append(
+                mase(w.target, forecast(model, past, horizon, fit_season), w.past, season)
+            )
         ours = float(np.nanmean(scores))
         frame = pd.read_csv(gift.RESULTS_URL.format(model=PUBLISHED_DIR[model])).set_index(
             "dataset"
@@ -67,7 +77,7 @@ def main() -> int:
         ref = float(frame.loc[TASK, "eval_metrics/MASE[0.5]"])
         dev = 100 * (ours - ref) / ref
         row = {
-            "model": model,
+            "model": f"{model}_s{fit_season}" if fit_season != season else model,
             "task": TASK,
             "MASE": ours,
             "ref_MASE": ref,
