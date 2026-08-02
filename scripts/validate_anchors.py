@@ -52,6 +52,9 @@ def main() -> int:
     # statsforecast default of 1 (non-seasonal); passing 1 here reproduces that
     # configuration. MASE scoring always uses the true seasonality regardless.
     parser.add_argument("--season-length", type=int, default=None)
+    # GIFT-Eval's paper protocol truncates statistical fits to the last 1000
+    # points; our default was 2048. Different history = different model.
+    parser.add_argument("--max-context", type=int, default=2048)
     args = parser.parse_args()
 
     windows, horizon = gift.load_task(TASK)
@@ -66,7 +69,7 @@ def main() -> int:
         started = time.time()
         scores = []
         for w in windows:
-            past = w.past[-2048:]  # bound ARIMA cost; plenty for classical fits
+            past = w.past[-args.max_context :]
             scores.append(
                 mase(w.target, forecast(model, past, horizon, fit_season), w.past, season)
             )
@@ -77,7 +80,9 @@ def main() -> int:
         ref = float(frame.loc[TASK, "eval_metrics/MASE[0.5]"])
         dev = 100 * (ours - ref) / ref
         row = {
-            "model": f"{model}_s{fit_season}" if fit_season != season else model,
+            "model": model
+            + (f"_s{fit_season}" if fit_season != season else "")
+            + (f"_ctx{args.max_context}" if args.max_context != 2048 else ""),
             "task": TASK,
             "MASE": ours,
             "ref_MASE": ref,
