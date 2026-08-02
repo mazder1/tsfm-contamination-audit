@@ -162,6 +162,25 @@ itself, which is what a tolerance has to be measured from.
 Every downstream number is worthless if the harness disagrees with the literature on the
 literature's own turf. A confirmed failure to reproduce is itself a reportable finding.
 
+### Correction: the positive-control claim was overstated ⚠
+
+The commit 8c71c0c claim - Moirai ties seasonal naive across ten proven-contaminated
+datasets, median ratio 1.02, therefore presence confers no advantage - mixed fair and
+handicapped comparisons. Review caught it: the fresh side always gave models 512 points of
+context, while most contaminated datasets are short series (M1 yearly: 15-58 points total).
+Foundation models degrade sharply with tiny context and seasonal naive does not, so the
+poor short-series ratios confound the short-history handicap with absence of memorisation.
+
+What survives on information-parity terms (equal context, horizon, seasonality): Chronos
+ETTh vs fresh electricity, 0.82 vs 0.28, and Moirai traffic (proven contaminated) vs fresh
+electricity, 0.68 vs 0.43. Better-on-fresh stands on matched pairs - but the positive
+control rests on ONE matched contaminated dataset, not ten.
+
+**Information-parity rule, adopted:** margin comparisons are only made between sides with
+equal context, horizon and seasonality. The handicap-curve experiment measures Moirai's
+context-degradation on clean fresh data, to test whether the short-series contaminated
+ratios are fully explained by handicap or carry a memorisation residue.
+
 ### Harness validation status
 
 Each model checked against a published number on GIFT-Eval `ett1/H/short`, since that is the
