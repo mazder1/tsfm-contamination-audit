@@ -52,7 +52,7 @@ def mass_distance(query: np.ndarray, candidate: np.ndarray) -> np.ndarray:
     return np.sqrt(dist_sq)
 
 
-def find_matches_with_gaps(query: np.ndarray, candidate: np.ndarray) -> list["Match"]:
+def find_matches_with_gaps(query: np.ndarray, candidate: np.ndarray) -> list[Match]:
     """NaN-aware search: split the candidate at missing values, search each run.
 
     A NaN anywhere in a window poisons the FFT sums and reads as a silent
