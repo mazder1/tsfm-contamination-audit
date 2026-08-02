@@ -23,11 +23,11 @@ import torch
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
-from run_audit import build_model, forecast_batch  # noqa: E402
-
 from tsfm_audit import config  # noqa: E402
 from tsfm_audit.analysis.metrics import get_seasonality, mase  # noqa: E402
 from tsfm_audit.series import load_series, split_at_gaps  # noqa: E402
+
+from run_audit import build_model, forecast_batch  # noqa: E402
 
 CONTEXTS = [16, 32, 64, 128, 512]
 N_WINDOWS = 10
@@ -63,9 +63,7 @@ def main() -> int:
             med = forecast_batch(model, pasts, context, device)
             # MASE denominator from the SAME short past each side sees, so the
             # metric is internally consistent at every context length.
-            scores = [
-                mase(targets[i], med[i][:H], pasts[i], season) for i in range(len(targets))
-            ]
+            scores = [mase(targets[i], med[i][:H], pasts[i], season) for i in range(len(targets))]
             rows.append(
                 {
                     "context": context,

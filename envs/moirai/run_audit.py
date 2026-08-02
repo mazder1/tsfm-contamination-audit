@@ -86,8 +86,10 @@ def main() -> int:
     parser.add_argument("--side", choices=["fresh", "contaminated"], default="fresh")
     args = parser.parse_args()
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    out = REPO_ROOT / "artifacts" / (
-        "fresh_eval.csv" if args.side == "fresh" else "contaminated_eval.csv"
+    out = (
+        REPO_ROOT
+        / "artifacts"
+        / ("fresh_eval.csv" if args.side == "fresh" else "contaminated_eval.csv")
     )
 
     if args.side == "fresh":
@@ -154,9 +156,7 @@ def main() -> int:
             pd.concat([existing, pd.DataFrame([row])], ignore_index=True).drop_duplicates(
                 subset=["model", "dataset"], keep="last"
             ).to_csv(out, index=False)
-            print(
-                f"  {name:<32} MASE={row['MASE']:.4f} ({row['secs']}s)", flush=True
-            )
+            print(f"  {name:<32} MASE={row['MASE']:.4f} ({row['secs']}s)", flush=True)
     print("done")
     return 0
 
