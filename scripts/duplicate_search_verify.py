@@ -18,7 +18,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from tsfm_audit.probes.duplicates import find_matches  # noqa: E402
 
-N_QUERIES = 25
+N_QUERIES = None  # None = all benchmark series
 
 
 def main() -> int:
@@ -36,8 +36,9 @@ def main() -> int:
     corpus_targets = [np.asarray(row["target"], dtype=float) for row in corpus]
     print(f"  corpus series: {len(corpus_targets)}")
 
+    n_queries = len(bench) if N_QUERIES is None else min(N_QUERIES, len(bench))
     matched = near = missed = 0
-    for i in range(min(N_QUERIES, len(bench))):
+    for i in range(n_queries):
         query = np.asarray(bench[i]["target"], dtype=float)
         best = None
         for j, target in enumerate(corpus_targets):
@@ -50,15 +51,17 @@ def main() -> int:
             near += 1
         else:
             missed += 1
-        label = "MATCH" if best and best[2] == "match" else ("near" if best else "none")
-        print(
-            f"  query {i:>3} (n={len(query):>4}) -> {label}"
-            + (f" rms={best[1]:.4f} corpus#{best[0]}" if best else "")
-        )
+        # Print only the interesting rows; 200 identical MATCH lines say nothing.
+        if not (best and best[2] == "match"):
+            label = "near" if best else "none"
+            print(
+                f"  query {i:>3} (n={len(query):>4}) -> {label}"
+                + (f" rms={best[1]:.4f} corpus#{best[0]}" if best else "")
+            )
 
-    print(f"\nmatched {matched}/{N_QUERIES}  near-miss {near}  none {missed}")
-    print("GATE PASSED" if matched >= int(0.9 * N_QUERIES) else "GATE FAILED")
-    return 0 if matched >= int(0.9 * N_QUERIES) else 1
+    print(f"\nmatched {matched}/{n_queries}  near-miss {near}  none {missed}")
+    print("GATE PASSED" if matched >= int(0.9 * n_queries) else "GATE FAILED")
+    return 0 if matched >= int(0.9 * n_queries) else 1
 
 
 if __name__ == "__main__":
