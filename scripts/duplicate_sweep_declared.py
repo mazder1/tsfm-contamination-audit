@@ -17,7 +17,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from tsfm_audit.probes.duplicates import find_matches  # noqa: E402
+from tsfm_audit.probes.duplicates import find_matches_with_gaps  # noqa: E402
 
 PAIRS = [
     ("monash_m1_monthly", "m1_monthly"),
@@ -75,7 +75,7 @@ def main() -> int:
             query = query[~np.isnan(query)]
             best = None
             for target in corpus_targets:
-                for m in find_matches(query, target):
+                for m in find_matches_with_gaps(query, target):
                     if best is None or m.rms < best.rms:
                         best = m
             if best and best.kind == "match":

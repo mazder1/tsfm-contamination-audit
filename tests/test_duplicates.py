@@ -54,3 +54,26 @@ def test_constant_query_is_rejected():
 
 def test_match_threshold_is_the_preregistered_one():
     assert MATCH_RMS == 0.05
+
+
+def test_copy_inside_a_gappy_candidate_is_found():
+    # The bug that made the _with_missing subsets unmatchable: a copy sitting
+    # between NaN holes must still fire, at the right original offset.
+    from tsfm_audit.probes.duplicates import find_matches_with_gaps
+
+    corpus = _series(seed=5)
+    query = corpus[600:900].copy()
+    gappy = corpus.copy()
+    gappy[100:120] = np.nan
+    gappy[1500:1510] = np.nan
+    hits = [m for m in find_matches_with_gaps(query, gappy) if m.kind == "match"]
+    assert hits and hits[0].offset == 600 and hits[0].rms < 1e-6
+
+
+def test_gappy_candidate_without_copy_stays_silent():
+    from tsfm_audit.probes.duplicates import find_matches_with_gaps
+
+    query = _series(seed=12)[:300]
+    gappy = _series(seed=13)
+    gappy[400:450] = np.nan
+    assert [m for m in find_matches_with_gaps(query, gappy) if m.kind == "match"] == []

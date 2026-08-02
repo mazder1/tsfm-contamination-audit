@@ -10,7 +10,7 @@ monash_covid_deaths,covid_deaths,266,15,0,0,15
 monash_fred_md,fred_md,107,15,15,0,0
 monash_hospital,hospital,767,15,0,0,15
 monash_cif_2016,cif_2016_12,57,15,0,1,14
-nn5,nn5_daily_with_missing,111,15,0,15,0
+nn5,nn5_daily_with_missing,111,15,0,0,15
 monash_nn5_weekly,nn5_weekly,111,15,0,0,15
 monash_tourism_monthly,tourism_monthly,366,15,11,0,4
 monash_tourism_quarterly,tourism_quarterly,427,15,0,0,15

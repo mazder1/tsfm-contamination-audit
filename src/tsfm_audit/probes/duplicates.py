@@ -52,6 +52,28 @@ def mass_distance(query: np.ndarray, candidate: np.ndarray) -> np.ndarray:
     return np.sqrt(dist_sq)
 
 
+def find_matches_with_gaps(query: np.ndarray, candidate: np.ndarray) -> list["Match"]:
+    """NaN-aware search: split the candidate at missing values, search each run.
+
+    A NaN anywhere in a window poisons the FFT sums and reads as a silent
+    no-match, so a series with holes was unmatchable even where 95% of it is a
+    verbatim copy. Splitting into gap-free runs - the same policy the fresh
+    benchmark uses - makes every clean stretch searchable, with offsets mapped
+    back to positions in the original series.
+    """
+    candidate = np.asarray(candidate, dtype=float)
+    finite = np.isfinite(candidate)
+    if finite.all():
+        return find_matches(query, candidate)
+
+    out: list[Match] = []
+    edges = np.flatnonzero(np.diff(np.concatenate(([0], finite.view(np.int8), [0]))))
+    for start, stop in zip(edges[::2], edges[1::2], strict=True):
+        for m in find_matches(query, candidate[start:stop]):
+            out.append(Match(offset=m.offset + int(start), rms=m.rms, kind=m.kind))
+    return sorted(out, key=lambda m: m.rms)
+
+
 @dataclass
 class Match:
     offset: int
