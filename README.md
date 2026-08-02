@@ -9,9 +9,10 @@ supervised" numbers are partly recall, not forecasting.
 This repository measures that, and ships an evaluation set that cannot be contaminated by
 construction.
 
-**Status: Phase 0 complete.** Pre-registration frozen, environment pinned, fresh benchmark
-backfilled across all three sources. No model has been run yet. See [`PLAN.md`](PLAN.md)
-for the full phase plan.
+**Status: mid-audit, findings live.** Pre-registration frozen; all four harnesses validated
+against published numbers; the near-duplicate probe has produced verdicts on Moirai's
+corpus; the behavioural probes are measured and their limits documented below. See
+[`PLAN.md`](PLAN.md) for the full phase plan and every correction made along the way.
 
 ---
 
@@ -305,15 +306,63 @@ sweep runs locally and its results are committed as artifacts.
 
 ---
 
-## Status warning: the probe currently fails its null control
+## State of the probes
 
-A forecastability pilot on fresh 2025-26 data - where contamination is impossible by date -
-shows Chronos scoring 33-37% better on real German electricity load than on its surrogates,
-under both families. That is the pre-registered signature of memorisation, produced where
-the true gap is provably zero. Cause: both surrogate families destroy weekly calendar
-structure that real load legitimately has. The families are being redesigned
-(calendar-aware variants), and no audit result exists or will be produced until the pilot
-reads zero on clean data. Details in [`PLAN.md`](PLAN.md) under Phase 3.
+Three instruments were built. Their measured status, in one table:
+
+| Probe | Status |
+|---|---|
+| **Near-duplicate corpus search** | **Works.** Gated on planted copies, semantics proven on real data. Sole source of hard verdicts. |
+| **Surrogate gap** (IAAFT + block bootstrap) | **Retired.** Fails its null controls: provably clean forecasters show gaps of -133% to +74% on fresh data, unpredictable even in sign. Detailed post-mortem in PLAN.md Phase 3. |
+| **Margin / generalization** | **Built, sensitivity ≈ zero.** On the one information-parity comparison available, the proven-contaminated model shows no advantage on its own training data — so this probe cannot convict, and fresh-side results are generalization evidence, never contamination clearance. |
+
+## Findings
+
+Each is documented with scripts, artifacts and its confounds in the commit history and PLAN.md.
+
+**1. Ten benchmark datasets sit verbatim in Moirai's training corpus — test windows
+included.** Proven by address (offset-level matches at RMS ≈ 0): m1_quarterly/yearly,
+m4_yearly, m3_quarterly/yearly, fred_md, tourism_monthly/yearly, traffic,
+australian_electricity. Declared overlap — the subset names match — but now verified at the
+numbers level rather than assumed from labels.
+
+**2. Dataset names are unreliable evidence of training overlap — in both directions.** Ten
+other same-named LOTSA subsets contain *different data* than the benchmark of the same name
+(covid_deaths, hospital, cif_2016, car_parts, both nn5, tourism_quarterly, m1_monthly,
+m3_monthly, m4_quarterly). Name-based contamination claims — the field's usual currency,
+including leaderboard leakage flags — are unsafe either way.
+
+**3. ETT is not in Moirai's affordable corpus subsets.** 56 query windows against all 22
+energy-domain subsets under a 120 MB cap: clean. Unsearched and named: three subsets of
+0.7-1.8 GB and buildings_900k at 60 GB; resampled copies would also evade the method.
+
+**4. Verbatim training-set presence shows no behavioural advantage — on the one fair test
+we have.** Moirai on its own proven-contaminated traffic data: naive-ratio 0.68, versus 0.43
+on fresh electricity under identical context/horizon/seasonality. Its short-series
+contaminated sets are uninterpretable either way, because context length alone degrades the
+model tenfold (measured on clean data). n = 1; scope stated.
+
+**5. The models generalize.** On matched comparisons, Chronos and Moirai beat
+contamination-immune baselines *more* on 2025-26 data that postdates their training than on
+the old benchmarks (Chronos 0.28 fresh vs 0.82 old; Moirai 0.43 vs 0.68). The opposite of
+what score-inflating memorisation would predict.
+
+**6. Published numbers are widely unreproducible — baselines included.** Lag-Llama's
+GIFT-Eval score depends on at least two unstated interacting settings (context, RoPE
+scaling; details below). GIFT-Eval's AutoETS baseline was run non-seasonally — discovered by
+config search, reproducing their 1.94 within 1% — which understates classical performance
+and flatters every foundation model's margin over it. Their AutoARIMA and AutoTheta match
+*no* configuration we tried, and ship no replication code. Meanwhile the same four classical
+implementations reproduce the Chronos paper's Table 10 — which published its full procedure —
+to within 1-5%. **One codebase matches every number whose procedure was published, and only
+those.**
+
+**7. The surrogate approach to contamination testing is unsound as commonly conceived.**
+Statistically-matched fakes (spectrum, distribution) are not forecastability-matched: clean
+linear models find them *easier* than real data, clean shape-based models find them harder,
+and the sign flips per forecaster and domain. Any audit built on "model beats its
+surrogates ⇒ memorisation" would manufacture findings. Acceptance battery for any redesign:
+eight clean forecasters must read ≈ zero gap on fresh data.
 
 ## A finding from Phase 1
 
@@ -344,22 +393,25 @@ Full detail in [`PLAN.md`](PLAN.md) under *Harness validation status*.
 
 ## Still open
 
-Deliberately unresolved, with the phase that resolves each:
+- **The central question the evidence now poses:** does ingestion leave *any* behavioural
+  fingerprint at all? Two paths remain: Phase 4's dose-response experiment (fine-tune a
+  small model with known over-exposure; find where any probe starts firing) and the untried
+  likelihood channel (does a model rate its training sequences as unusually probable even
+  when forecasts don't improve).
+- Lag-Llama and TimesFM fresh-side runs, and ARIMA on the fresh benchmark, to complete the
+  generalization table.
+- The four unsearched large corpus subsets, if the disk cost is ever accepted.
+- Each model's true data cutoff — **Phase 7**, documenting established versus assumed.
 
-- Which benchmark datasets to probe — defaulting to the standard set (ETT, Electricity,
-  Traffic, Weather, M4 subset), confirmed in **Phase 1** against published numbers.
-- Block length for the bootstrap surrogate — **Phase 3**, chosen by a stated criterion, not
-  by which value gives the nicer answer.
-- Near-duplicate window length, normalization, and match threshold — **Phase 6**.
-- Which corpora can actually be searched — **Phase 6**, with the unsearchable ones named.
-- Each model's true data cutoff — **Phase 7**, documenting what was established versus
-  assumed.
+## The result we are heading toward
 
-## The result we might get
+When this project was pre-registered, the risk named here was finding nothing and being
+tempted to loosen thresholds. The actual trajectory is stranger: the benchmarks are
+unreproducible in five documented ways, the one inspectable corpus really does contain its
+test data — and on every fair test so far, it doesn't help the models at all. If that holds
+through the remaining work, the paper's claim becomes: *contamination of time-series
+foundation models is real at the data level, invisible at the behavioural level, and the
+field's evaluation hygiene is a bigger problem than its memorisation.*
 
-All four models may come back clean. That is a real finding and it gets published as one:
-*a calibrated probe, sensitivity validated against a known-contaminated model, and the
-headline claims survive.*
-
-The danger is that such an outcome invites quietly loosening the threshold afterwards.
-Which is the entire reason this section sits above the results, and was committed first.
+Every correction, refuted prediction and retracted claim along the way is preserved in the
+commit history — this project applies its standard to itself first.
