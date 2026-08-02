@@ -1,0 +1,11 @@
+model,dataset,n_series,MASE,secs
+moirai-base,monash_m1_quarterly,203,1.9302971873778847,0.7
+moirai-base,monash_m1_yearly,181,4.535914958299576,0.2
+moirai-base,m4_yearly,23000,3.9381560247235,80.0
+moirai-base,monash_m3_quarterly,756,1.5848349469440948,1.1
+moirai-base,monash_m3_yearly,645,3.404887337768823,1.0
+moirai-base,monash_fred_md,107,2.0528738603972343,0.7
+moirai-base,monash_tourism_monthly,366,3.544948095273276,1.1
+moirai-base,monash_tourism_yearly,518,2.961960904095544,0.7
+moirai-base,monash_traffic,862,0.7319856625427567,1.4
+moirai-base,monash_australian_electricity,5,1.3179096443600935,0.2

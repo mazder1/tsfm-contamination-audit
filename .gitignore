@@ -29,3 +29,6 @@ Thumbs.db
 
 # GIFT-Eval benchmark data: re-downloadable, and grows to many GB across tasks
 data/gift_eval/
+
+# per-env HF datasets caches (datasets 2.x cannot read 5.x cache entries)
+envs/*/.hf_datasets_cache/
